@@ -1,0 +1,47 @@
+{
+  "url": "http://127.0.0.1:4431/lamplit/app/#/schedules",
+  "viewport": [
+    1080,
+    1080
+  ],
+  "ready": "[data-ready]",
+  "rects": {
+    "newSchedule": "[data-panel=\"new-schedule\"]",
+    "scheduleField": ".big-field",
+    "scheduleResult": "[data-panel=\"schedule-result\"]",
+    "cron": "[data-cron]",
+    "nextRuns": "[data-next-runs]",
+    "scheduleSummary": "[data-panel=\"schedule-summary\"]"
+  },
+  "steps": [
+    {
+      "rects": "schedule"
+    },
+    {
+      "capture": "sched-idle",
+      "around": "[data-panel=\"new-schedule\"]",
+      "pad": 0,
+      "scale": 5
+    },
+    {
+      "click": "[data-field=\"schedule\"]"
+    },
+    {
+      "capture": "sched-00",
+      "around": "[data-panel=\"new-schedule\"]",
+      "pad": 0,
+      "scale": 5
+    },
+    {
+      "type": "[data-field=\"schedule\"]",
+      "text": "every weekday at 9am",
+      "capture": "sched",
+      "around": "[data-panel=\"new-schedule\"]",
+      "pad": 0,
+      "scale": 5
+    },
+    {
+      "rects": "typed"
+    }
+  ]
+}

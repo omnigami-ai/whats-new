@@ -1,0 +1,990 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fernwise · What's new · Fictional company example</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #28452a; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+<a id="credit" href="https://x.com/moutaio/status/2103826041831588016" target="_blank" rel="noopener" style="position:fixed;bottom:8px;right:12px;color:#aaa;font:11px sans-serif;z-index:2">Style inspired by @moutaio's video · Independent study</a>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="kit.js"></script>
+<script>
+// Fernwise app update. A fictional company made for omnigami's examples.
+// KEEP the release grid, rising words, cards, camera, count-up and ending.
+// ADAPT the brand, fields, captured states, touch actions and sound cues.
+// REPLACE the reference's desktop features with the working phone app's features.
+// Every UI pixel comes from assets/screens/ and assets/full/, captured by the two phone plans.
+(() => {
+  const { clamp, lerp, spring, loadFont, loadImage, roundRect, capRatio, motion: m } = window.kit;
+  const FPS = 60, BPM = 120, BEAT = 60 / BPM, BAR = 4 * BEAT, F = BEAT / 6; // F: a step, the choreography's unit (a sixth of a beat)
+  const at = (bar, beat = 0) => +(bar * BAR + beat * BEAT).toFixed(4); // a time on the beat grid
+  const SHAPES = { '9:16': [1080, 1920], '16:9': [1920, 1080], '1:1': [1440, 1440] };
+  let W = 1920, H = 1080, U = 10.8, shape = '16:9', tall = false, wide = true; // U: 1% of the frame's short side
+
+  const canvas = document.getElementById('c');
+  const g = canvas.getContext('2d', { willReadFrequently: true });
+
+  // ---------- ADAPT: the product's colours ----------
+  // Two grounds that alternate (style.md): a light one and a dark one, both from the brand. The
+  // dark ground sits a shade under the product's own page colour so the captured UI reads as a card.
+  const LIGHT = '#F6F1E7', DARK = '#28452A';
+  const ON = { light: { name: '#28452A', line: '#706C60', tag: '#706C60' }, dark: { name: '#F6F1E7', line: '#CDD9BD', tag: '#CDD9BD' } };
+  const UI_INK = '#F6F1E7', UI_LINE = '#9CC57A', ACCENT = '#9CC57A';
+  const SANS = (w) => (s) => `${w} ${s}px "Nunito"`;
+  const MONO = SANS;
+  const DISPLAY = (w) => (s) => `480 ${s}px "Fraunces"`;
+
+  // ---------- ADAPT: the words, as named fields ----------
+  const DEFAULTS = {
+    open: "Plant care. What's new.",
+    tag1: '', name1: 'Light check.', line1: 'Find Dot a kinder spot.',
+    tag2: '', name2: 'Rescue guides.', line2: 'Three small steps. A reminder for later.',
+    tag3: '', name3: 'Watered today.', line3: 'One tap per plant. Everyone gets a drink.',
+    stat: '3', stat1: 'plants watered.', stat2: 'Every thirsty plant, taken care of.', statSource: 'Today.',
+    product: 'Fernwise', promise: 'Keep the little ones alive.', get: 'Update Fernwise',
+  };
+  const FIELDS = [
+    { id: 'open', type: 'text', label: 'Open line', maxLength: 32, help: 'What the product is, and that this is what is new.' },
+    { id: 'tag1', type: 'text', label: 'Feature 1, version', maxLength: 8, help: 'Leave a version empty to hide it.' },
+    { id: 'name1', type: 'text', label: 'Feature 1, name', maxLength: 32, help: 'One to five words, with a full stop.' },
+    { id: 'line1', type: 'text', label: 'Feature 1, line', maxLength: 56 },
+    { id: 'tag2', type: 'text', label: 'Feature 2, version', maxLength: 8 },
+    { id: 'name2', type: 'text', label: 'Feature 2, name', maxLength: 32 },
+    { id: 'line2', type: 'text', label: 'Feature 2, line', maxLength: 56 },
+    { id: 'tag3', type: 'text', label: 'Feature 3, version', maxLength: 8 },
+    { id: 'name3', type: 'text', label: 'Feature 3, name', maxLength: 32 },
+    { id: 'line3', type: 'text', label: 'Feature 3, line', maxLength: 56 },
+    { id: 'stat', type: 'text', label: 'Stat', maxLength: 8, help: 'A number from the product; it counts up from 0.' },
+    { id: 'stat1', type: 'text', label: 'Stat, line 1', maxLength: 44 },
+    { id: 'stat2', type: 'text', label: 'Stat, line 2', maxLength: 44 },
+    { id: 'statSource', type: 'text', label: 'Proof context', maxLength: 40, help: 'Sources are recorded in STORY.md; keep this line useful to the viewer.' },
+    { id: 'product', type: 'text', label: 'Name and version', maxLength: 20 },
+    { id: 'promise', type: 'text', label: 'Promise', maxLength: 40 },
+    { id: 'get', type: 'text', label: 'How to get it', maxLength: 32 },
+  ];
+  let V = DEFAULTS; // set from seek's arguments on every frame
+
+  // ---------- KEEP: assets ----------
+  // capture sets, each made by one plan: the desktop window (1440 × 900), and the app's own narrower
+  // layout (a 1080 × 1080 window) that square and tall use where it lets the camera get closer
+  const SETS = ['screens','full','rings'];
+  const A = { sets: {}, img: {}, brand: {}, plants: {} };
+  const margin = () => W * 0.07, column = () => W * 0.86;
+  const cap = (name, set = 'screens') => { const c = A.sets[set].captures[name]; return { img: A.img[`${set}/${c.file}`], rect: c.rect, scale: c.scale }; };
+  const R = (state, set = 'screens') => A.sets[set].rects[state];
+  const pad = ([x, y, w, h], px, py = px) => [x - px, y - py, w + 2 * px, h + 2 * py];
+
+  // ---------- KEEP: type. Words rise from behind a mask at their baseline ----------
+  const steps = (t, t0) => (t - t0) / F;
+  const out3 = m.out, out5 = m.out;
+  const moveAt = (t, from, to) => out5((t - from) / (to - from));
+  const cameraAt = (t, from, to) => m.inOut((t - from) / (to - from));
+  function setText(c, font, size, tracking = 0) { c.font = font(size); c.letterSpacing = `${tracking * size}px`; c.textBaseline = 'alphabetic'; c.textAlign = 'left'; }
+  const widthOf = (c, font, size, s, tracking = 0) => { setText(c, font, size, tracking); return c.measureText(s).width; };
+  // capRatio measures its first call by assigning ctx.font. Preserve drawing
+  // state so a cold seek directly to the ending paints the same type size.
+  const capOf = (font, size) => { g.save(); const cap=capRatio(g,font)*size; g.restore(); return cap; };
+  // words wrapped at a width, greedily
+  function wrapAt(c, words, font, size, width, tracking) {
+    const parts=[];
+    for (const word of words) {
+      if (word.length < 20 || widthOf(c,font,size,word,tracking)<=width) { parts.push(word); continue; }
+      let part='';
+      for (const ch of [...word]) {
+        if (part && widthOf(c,font,size,part+ch,tracking)>width) { parts.push(part); part=''; }
+        part+=ch;
+      }
+      if(part) parts.push(part);
+    }
+    const lines=[]; let cur='';
+    for(const word of parts) { const next=cur ? `${cur} ${word}` : word;
+      if(cur && widthOf(c,font,size,next,tracking)>width) { lines.push(cur);cur=word; } else cur=next;
+    }
+    return cur ? [...lines,cur] : lines;
+  }
+  // the largest size (between min and max) at which the text wraps into maxLines within maxW,
+  // then the narrowest measure that keeps that many lines, so the lines come out even
+  function fitLines(c, text, font, { maxSize, minSize, maxW, maxLines, tracking = 0 }) {
+    const words = String(text).trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return { size: maxSize, lines: [] };
+    const fits = (s) => { const l = wrapAt(c, words, font, s, maxW, tracking); return l.length <= maxLines && l.every((x) => widthOf(c, font, s, x, tracking) <= maxW + 0.5) ? l : null; };
+    let size = maxSize, lines = fits(maxSize);
+    if (!lines) {
+      let lo = minSize, hi = maxSize; lines = null;
+      for (let i = 0; i < 16; i++) { const mid = (lo + hi) / 2, l = fits(mid); if (l) { size = mid; lines = l; lo = mid; } else hi = mid; }
+      if (!lines) { size = minSize; lines = wrapAt(c, words, font, size, maxW, tracking); }
+    }
+    if (lines.length > 1) { // balance; and where a break can fall after a comma or full stop, take it
+      let lo = maxW * 0.45, hi = maxW;
+      for (let i = 0; i < 12; i++) { const mid = (lo + hi) / 2, l = wrapAt(c, words, font, size, mid, tracking); if (l.length <= lines.length && l.every((x) => widthOf(c, font, size, x, tracking) <= mid + 0.5)) { lines = l; hi = mid; } else lo = mid; }
+      const stops = (l) => l.slice(0, -1).filter((x) => /[,.;:]$/.test(x)).length;
+      for (let k = 0; k <= 24; k++) {
+        const w = maxW * (1 - k * 0.022), l = wrapAt(c, words, font, size, w, tracking);
+        if (l.length === lines.length && stops(l) > stops(lines) && l.every((x) => widthOf(c, font, size, x, tracking) <= maxW + 0.5)) lines = l;
+      }
+    }
+    return { size, lines };
+  }
+  // one line whose words rise into place from behind a mask at the baseline, a word every `stagger`
+  function rise(c, text, x, y, font, size, t, t0, { colour, align = 'left', tracking = 0, stagger = 0.08, dur = 0.4 } = {}) {
+    const words = String(text).split(' ').filter(Boolean);
+    const space = widthOf(c, font, size, ' ', tracking), widths = words.map((w) => widthOf(c, font, size, w, tracking));
+    const total = widths.reduce((a, b) => a + b, 0) + space * Math.max(0, words.length - 1);
+    let wx = align === 'center' ? x - total / 2 : align === 'right' ? x - total : x;
+    words.forEach((w, i) => {
+      const p = (t - t0 - i * stagger) / dur;
+      if (p > 0) {
+        const e = tall ? out5(p) : out3(p), dy = (1 - e) * size * 0.95;
+        c.save(); c.globalAlpha *= e;
+        if (e < 1) { c.beginPath(); c.rect(wx - size, y - size * 1.25, widths[i] + 2 * size, size * 1.55); c.clip(); }
+        setText(c, font, size, tracking); c.fillStyle = colour; c.fillText(w, wx, y + dy);
+        c.restore();
+      }
+      wx += widths[i] + space;
+    });
+    return total;
+  }
+
+  // ---------- KEEP: a feature's words: the version, the name, its line ----------
+  // Measured first (so the product can take the rest of the frame), then drawn rising.
+  function titleBlock(f, box, align) {
+    const tag = V[f.words[0]] || '', name = V[f.words[1]] || '', line = V[f.words[2]] || '';
+    const beside = align === 'left';
+    const nameFont = DISPLAY(480), lineFont = SANS(500), tagFont = MONO(500);
+    const N = fitLines(g, name, nameFont, { maxSize: box.nameMax, minSize: 2.4 * U, maxW: box.w, maxLines: /\S{20}/.test(name) ? 3 : 2, tracking: -0.035 });
+    const ls = Math.min(box.lineSize, N.size / 1.4), L = fitLines(g, line, lineFont, { maxSize: ls, minSize: 2.2 * U, maxW: box.lineW || box.w, maxLines: 3, tracking: -0.01 });
+    const tagS = 3.0 * U, nameLead = N.size * 1.0, lineLead = L.size * 1.28;
+    const capN = capOf(nameFont, N.size), capL = capOf(lineFont, L.size), capT = capOf(tagFont, tagS);
+    // vertical rhythm: tag, a gap, the name's lines, a gap, the line's lines
+    let y = 0; const rows = [];
+    if (tag) { y += capT; rows.push({ kind: 'tag', text: tag, y, size: tagS }); y += tagS * 1.1; }
+    N.lines.forEach((l, i) => { y += i ? nameLead : capN; rows.push({ kind: 'name', text: l, y, size: N.size, i }); });
+    y += N.size * 0.22;
+    L.lines.forEach((l, i) => { y += i ? lineLead : capL + L.size * 0.62; rows.push({ kind: 'line', text: l, y, size: L.size, i }); });
+    y += L.size * 0.3;
+    return { rows, height: y, nameSize: N.size };
+  }
+  function drawTitle(f, block, x, top, align, t, colours, t0 = f.t0) {
+    for (const r of block.rows) {
+      // the name is already rising on the cut's first frame
+      if (r.kind === 'tag') rise(g, r.text, x, top + r.y, MONO(500), r.size, t, t0, { colour: colours.tag, align, tracking: 0.02 });
+      if (r.kind === 'name') rise(g, r.text, x, top + r.y, DISPLAY(480), r.size, t, t0 + r.i * 1.5 * F, { colour: colours.name, align, tracking: -0.035 });
+      if (r.kind === 'line') rise(g, r.text, x, top + r.y, SANS(500), r.size, t, t0 + BEAT + r.i * F, { colour: colours.line, align, tracking: -0.01, stagger: 0.05, dur: 0.36 });
+    }
+  }
+
+  // ---------- KEEP: the layouts. Beside (wide only) or above; the product's cards take the rest ----------
+  // A feature shows one or more views of its product, each in its own card (tall stacks a control
+  // over its result). A card is as wide as the room and as tall as its tallest framing needs at that
+  // width, so the product fills it. When the cards don't fit, a single card gives way in height (the
+  // camera fits its framings to what's left) and a stack shrinks whole.
+  function cardsFor(views, area, gap) {
+    const [ax, ay, aw, ah] = area;
+    const sizes = views.map((v) => {
+      let w = 0, h = 0;
+      for (const key of v.keys) { const [, , fw, fh] = framing(key[1]), k = Math.min(aw / (fw * 1.08), v.maxK); w = Math.max(w, fw * 1.08 * k); h = Math.max(h, fh * 1.08 * k); }
+      return [Math.min(aw, Math.max(w, aw * (v.fill ?? 1))), h];
+    });
+    const total = sizes.reduce((a, [, h]) => a + h, 0) + gap * (views.length - 1), s = Math.min(1, ah / total);
+    let y = ay + (ah - Math.min(total, ah)) / 2;
+    const sw = views.length > 1 ? s : 1; // a stack shrinks whole, so each framing still fills its card; a single card keeps its width
+    return sizes.map(([w, h]) => { const r = [ax + (aw - w * sw) / 2, y, w * sw, h * s]; y += h * s + gap; return r; });
+  }
+  function layoutFor(f, t) {
+    const views = f.views(t), gap = 2.4 * U;
+    if (tall) {
+      const block = titleBlock(f, { w: column(), nameMax: 10 * U, lineSize: 4.2 * U }, 'left');
+      const ty = 0.10 * H, y0 = ty + block.height + gap, bottom = 0.88 * H;
+      // One 7% column. Every crop has a fixed aspect and pixel scale; a
+      // room-photo band supplies Light's context without shrinking its meter.
+      const heights = views.map(v => column() / cropRatio(v.keys,t));
+      const total = heights.reduce((a,b)=>a+b,0) + gap * (views.length-1);
+      const available = Math.max(1,bottom-y0), scale = Math.min(1,available/total);
+      let y = bottom-total*scale;
+      const cards = heights.map(h => { const card=[margin(),y,column()*scale,h*scale]; y+=h*scale+gap*scale; return card; });
+      return { views, block, tx: margin(), ty, align: 'left', cards };
+    }
+    return releaseLayout(f, views, gap);
+  }
+  // Rev 7: native panel aspects and a fixed camera scale in each frame.
+  // Square keeps the meter's proof-reading size; its room band joins the same card.
+  function releaseLayout(f, views, gap) {
+    const titleWidth=wide ? W*0.33 : column()-3*U;
+    let nameMax=(wide?11.5:8.8)*U,lineSize=(wide?4.4:3.7)*U,block;
+    const titleHeight=(wide?.34:.145)*H;
+    for(let i=0;i<30;i++) {
+      block=titleBlock(f,{w:titleWidth,nameMax,lineSize},'left');
+      if(block.height<=titleHeight)break;
+      nameMax*=.94;lineSize*=.94;
+    }
+    const ty=.10*H,bottom=.90*H;
+    let cards;
+    if(wide) {
+      const area=[.46*W,ty,.47*W,bottom-ty];
+      const panel=views.at(-1),r=framing(panel.keys[0][1]),ratio=r[2]/r[3];
+      const h=Math.min(area[3],area[2]/ratio),w=h*ratio;
+      const primary=[area[0]+area[2]-w,ty,w,h];
+      cards=[primary];
+      if(f===F1) {
+        const pr=framing(views[0].keys[0][1]),pw=titleWidth;
+        const photo=[margin(),bottom-pw*pr[3]/pr[2],pw,pw*pr[3]/pr[2]];
+        cards=[photo,primary];
+      }
+    } else {
+      const top=ty+block.height+gap,available=bottom-top;
+      if(f===F1) {
+        const photoWidth=.28*W,meterWidth=.54*W;
+        const heights=views.map((v,i)=>{
+          const r=framing(v.keys[0][1]);return (i?meterWidth:photoWidth)*r[3]/r[2];
+        });
+        const scale=Math.min(1,available/(heights[0]+heights[1]+gap));
+        let y=bottom-(heights[0]+heights[1]+gap)*scale;
+        cards=heights.map((h,i)=>{
+          const w=(i?meterWidth:photoWidth)*scale,card=[(W-w)/2,y,w,h*scale];
+          y+=h*scale+gap*scale;return card;
+        });
+        // Rev 7b: use the space above the unchanged meter for a full-width
+        // photo band. Crop the room vertically, never shrink the proof UI.
+        const meter=cards[1];
+        cards[0]=[meter[0],top,meter[2],meter[1]-top];
+      } else {
+        const r=framing(views[0].keys[0][1]),ratio=r[2]/r[3];
+        const maxWidth=f===F2?.65*W:column(),h=Math.min(available,maxWidth/ratio),w=h*ratio;
+        cards=[[f===F2?W-margin()-w:(W-w)/2,bottom-h,w,h]];
+      }
+    }
+    return {views,block,tx:margin(),ty,align:'left',cards};
+  }
+
+  // ---------- KEEP: the product card, the camera inside it, the cursor ----------
+  // A camera key is [t, framing, ease, dip]: a framing is a page rect (CSS px), or one per shape
+  // ({ '16:9': rect, '1:1': rect, '9:16': rect }), fitted to the card with a margin and never past
+  // the capture's scale × 1.15. Moves: cut, whip (back-loaded, lands soft), pull (front-loaded),
+  // move (in and out), drift (the camera breathing during a hold). Scale moves in log space.
+  const EASE = {
+    cut: () => 1,
+    pull: (p) => 1 - (1 - p) ** 3.5,
+    whip: (p) => { const q = p ** 1.35; return q < 0.5 ? 4 * q ** 3 : 1 - (-2 * q + 2) ** 3 / 2; },
+    move: (p) => (p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2),
+    drift: (p) => p,
+  };
+  const framing = (fr) => (Array.isArray(fr) ? fr : fr[shape] || fr['16:9']);
+  function fitCam(rect, card, maxK, bounds, zoom = 1) {
+    const [x, y, w, h] = rect, [, , cw, ch] = card;
+    const k = Math.min(cw / (w * 1.08), ch / (h * 1.08), maxK) * zoom;
+    let cx = x + w / 2, cy = y + h / 2;
+    if (bounds) { // keep the view inside the capture
+      const hw = cw / 2 / k, hh = ch / 2 / k, [bx, by, bw, bh] = bounds;
+      cx = bw > 2 * hw ? clamp(cx, bx + hw, bx + bw - hw) : bx + bw / 2;
+      cy = bh > 2 * hh ? clamp(cy, by + hh, by + bh - hh) : by + bh / 2;
+    }
+    return { x: cx, y: cy, k };
+  }
+  function camOn(keys, t, card, maxK, bounds) {
+    const fit = (key) => fitCam(framing(key[1]), card, maxK, typeof bounds === 'function' ? bounds(key[0]) : bounds, key[4] || 1);
+    let a = keys[0], b = keys[0];
+    for (let i = 1; i < keys.length; i++) { if (t < keys[i][0]) { b = keys[i]; break; } a = b = keys[i]; }
+    const A0 = fit(a), B0 = fit(b);
+    const q = b === a ? 1 : clamp((t - a[0]) / (b[0] - a[0])), p = b === a ? 1 : EASE[b[2]](q);
+    const dip = b[3] ? 1 - b[3] * Math.sin(Math.PI * q) ** 2 : 1;
+    return { x: lerp(A0.x, B0.x, p), y: lerp(A0.y, B0.y, p), k: Math.exp(lerp(Math.log(A0.k), Math.log(B0.k), p)) * dip };
+  }
+  function cardIn(t, t0, top) { // the card rises in from below the frame on a spring, a step after the name
+    const s = m.settle(t - t0, 0.6);
+    return { dy: (1 - s) * (H - top + 4 * U), k: lerp(0.96, 1, clamp(s, 0, 1.2)), on: t >= t0 };
+  }
+  function drawCard(card, ground, t, t0, paint) {
+    const [x, y, w, h] = card, r = 1.4 * U, m = cardIn(t, t0, y);
+    if (!m.on) return;
+    g.save();
+    g.translate(x + w / 2, y + h / 2 + m.dy); g.scale(m.k, m.k); g.translate(-w / 2, -h / 2);
+    g.save(); // shadow, then the border
+    roundRect(g, 0, 0, w, h, r);
+    g.shadowColor = ground === 'light' ? 'rgba(14,18,32,0.30)' : 'rgba(0,0,0,0.65)'; g.shadowBlur = 5 * U; g.shadowOffsetY = 1.8 * U;
+    g.fillStyle = UI_INK; g.fill(); g.restore();
+    g.save(); roundRect(g, 0, 0, w, h, r); g.clip();
+    paint(w, h);
+    g.restore();
+    roundRect(g, 0.5, 0.5, w - 1, h - 1, r); g.lineWidth = Math.max(1, 0.12 * U); g.strokeStyle = ground === 'light' ? 'rgba(14,18,32,0.22)' : UI_LINE; g.stroke();
+    g.restore();
+  }
+  // a capture through the camera, inside a card of size w × h
+  const toCard = (cam, w, h, x, y) => [(x - cam.x) * cam.k + w / 2, (y - cam.y) * cam.k + h / 2];
+  function drawCap(cam, w, h, name, set) {
+    const { img, rect: [x, y, cw, ch] } = cap(name, set), [fx, fy] = toCard(cam, w, h, x, y);
+    g.imageSmoothingQuality = 'high'; g.drawImage(img, fx, fy, cw * cam.k, ch * cam.k);
+  }
+  // a point on a page rect: [x + w·fx, y + h·fy]
+  const on = (r, fx = 0.6, fy = 0.62) => [r[0] + r[2] * fx, r[1] + r[3] * fy];
+
+  // ---------- ADAPT: real app states and touches ----------
+  // One soft contact ring; the app supplies all controls, text, photos and results.
+  function touch(t, when, target, cam, w, h) {
+    const age = t - when;
+    if (age < -0.1 || age > 0.42) return;
+    const [x,y] = toCard(cam,w,h,...target), p = clamp((age + 0.1) / 0.52);
+    g.save(); g.globalAlpha = Math.sin(Math.PI * p) * 0.75;
+    g.beginPath(); g.arc(x,y,(2.2 + p * 1.8) * U,0,2*Math.PI);
+    g.fillStyle = '#ffffff'; g.fill(); g.lineWidth = 0.22 * U; g.strokeStyle = '#28452A'; g.stroke(); g.restore();
+  }
+  const F1 = { t0: at(1,1), words: ['tag1','name1','line1'], ground: 'light', layout: 'beside', click: at(1,2) };
+  F1.views = (t) => lightViews(t);
+
+  const F2 = { t0: at(2,3), words: ['tag2','name2','line2'], ground: 'dark', layout: 'beside', click: at(2,3.5), second: at(3,0.5), remind: at(3,1.75) };
+  F2.views = (t) => rescueViews(t);
+
+  const F3 = { t0: at(4,1), words: ['tag3','name3','line3'], ground: 'light', layout: 'beside', click1: at(4,2), click2: at(5,1), click3: at(6) };
+  F3.views = (t) => waterViews(t);
+
+  const FEATURES = [F1, F2, F3];
+
+  // ---------- KEEP: the beats. ADAPT their times when the features change ----------
+  const BEATS = { open: 0, stat: at(7,2), end: at(8,3), duration: at(10) };
+  const DURATION = BEATS.duration;
+  // Every handoff lasts one beat. The incoming foreground starts one beat
+  // before the boundary, so its entrance shares the outgoing scene's travel.
+  const HANDOFF = BEAT, LEAD = BEAT;
+  const entryAt = f => f.t0 - LEAD;
+  const proofAt = () => BEATS.stat - LEAD;
+
+  // Phone camera crops change aspect as we move from a room or guide to its
+  // controls. Resize the captured card inside the allocated area, so its edges
+  // do not cut through the neighbouring app text outside the focus region.
+  function cropRatio(keys,t) {
+    let a=keys[0],b=a;
+    for(let i=1;i<keys.length;i++) { if(t<keys[i][0]) {b=keys[i];break;} a=b=keys[i]; }
+    const ar=framing(a[1]),br=framing(b[1]),p=a===b?1:EASE[b[2]](clamp((t-a[0])/(b[0]-a[0])));
+    return lerp(ar[2],br[2],p)/lerp(ar[3],br[3],p);
+  }
+  function focusedCard(keys,t,box) {
+    const ratio=cropRatio(keys,t);
+    const [x,y,w,h]=box, nw=Math.min(w,h*ratio),nh=nw/ratio;
+    return [x+(w-nw)/2,y+(tall?0:(h-nh)/2),nw,nh];
+  }
+  // A detached captured element has an explicit 12 CSS px gutter. Draw only its
+  // complete source box, so neighbouring labels can never leak across the card edge.
+  function detailView(t0, rect, nameAt, set = 'screens', gutter = 12) {
+    const [x,y,w,h]=rect, box=[x-gutter,y-gutter,w+2*gutter,h+2*gutter];
+    const view=cleanView(t0,box,nameAt,set);
+    view.draw=(t,cam,cw,ch)=> {
+      const c=cap(nameAt(t),set), [cx,cy]=toCard(cam,cw,ch,x,y);
+      g.imageSmoothingQuality='high';
+      g.drawImage(c.img,(x-c.rect[0])*c.scale,(y-c.rect[1])*c.scale,w*c.scale,h*c.scale,cx,cy,w*cam.k,h*cam.k);
+    };
+    return view;
+  }
+  function cleanView(t0, rect, nameAt, set = 'screens') {
+    return { exact: true, maxK: cap(nameAt(t0),set).scale*1.15, keys: [[t0,rect,'cut']],
+      draw: (t,cam,w,h) => drawCap(cam,w,h,nameAt(t),set) };
+  }
+
+  // Portrait revision: move complete captured panels toward the action, rather
+  // than cutting into their text. Changing their relative widths is the camera
+  // push; the stack keeps its natural aspects and its bottom at 88% of the frame.
+  function patch(name, rect, cam, w, h) {
+    const c = cap(name,'full'), [x,y,rw,rh] = rect;
+    const [px,py] = toCard(cam,w,h,x,y);
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(c.img,(x-c.rect[0])*c.scale,(y-c.rect[1])*c.scale,rw*c.scale,rh*c.scale,px,py,rw*cam.k,rh*cam.k);
+  }
+  function clipPage(rect,cam,w,h) {
+    const [x,y] = toCard(cam,w,h,rect[0],rect[1]);
+    g.beginPath(); g.rect(x,y,rect[2]*cam.k,rect[3]*cam.k); g.clip();
+  }
+  // rev 5: all UI artwork is native raster footage. Each result is a
+  // separate, explicitly clipped element; the unchanged base is drawn once.
+  const RELEASE = 0.06, RESULT = 1.7;
+  const WATER_RING = 1, WATER_MOVE = RELEASE + WATER_RING;
+  const tickLayer=document.createElement('canvas');
+  const tickCtx=tickLayer.getContext('2d',{willReadFrequently:true});
+  const shift = (r,dx=0,dy=0) => [r[0]+dx,r[1]+dy,r[2],r[3]];
+  function fragment(name,source,dest,cam,w,h) {
+    const c=cap(name,'full'),[x,y]=toCard(cam,w,h,dest[0],dest[1]);
+    g.imageSmoothingQuality='high';
+    g.drawImage(c.img,(source[0]-c.rect[0])*c.scale,(source[1]-c.rect[1])*c.scale,
+      source[2]*c.scale,source[3]*c.scale,x,y,dest[2]*cam.k,dest[3]*cam.k);
+  }
+  function region(rect,cam,w,h,paint) {
+    g.save();clipPage(rect,cam,w,h);paint();g.restore();
+  }
+  // Roll two recorded values behind their own fixed viewport. Never interpolate
+  // the opacity of captures, or invent intermediate UI text.
+  const rollLayer=document.createElement('canvas');
+  const rollCtx=rollLayer.getContext('2d',{willReadFrequently:true});
+  function roll(before,after,rect,t,at,dur,cam,w,h) {
+    const p=m.settle(t-at,dur);
+    if(p<=0)return;
+    // Crop both recorded lines before moving them. The CPU tile itself is
+    // the viewport, so neither line can paint into a neighbouring number.
+    const [rx,ry,rw,rh]=rect,scale=cap(before,'full').scale;
+    rollLayer.width=Math.ceil(rw*scale);rollLayer.height=Math.ceil(rh*scale);rollCtx.reset();
+    const backing=cap(before,'full');
+    rollCtx.drawImage(backing.img,(rx-backing.rect[0])*backing.scale,(ry-backing.rect[1])*backing.scale,1,1,0,0,rollLayer.width,rollLayer.height);
+    for(const [name,dy] of [[before,-p],[after,1-p]]) {
+      const c=cap(name,'full');
+      rollCtx.drawImage(c.img,(rx-c.rect[0])*c.scale,(ry-c.rect[1])*c.scale,rw*c.scale,rh*c.scale,
+        0,dy*rollLayer.height,rollLayer.width,rollLayer.height);
+    }
+    region(rect,cam,w,h,()=>{
+      const [x,y]=toCard(cam,w,h,rx,ry);
+      g.drawImage(rollLayer,x,y,rw*cam.k,rh*cam.k);
+    });
+  }
+  const union=(a,b)=>[Math.min(a[0],b[0]),Math.min(a[1],b[1]),
+    Math.max(a[0]+a[2],b[0]+b[2])-Math.min(a[0],b[0]),
+    Math.max(a[1]+a[3],b[1]+b[3])-Math.min(a[1],b[1])];
+  const lightLabelBoxes=()=>R('light-window','full').dialLabels.map((r,i)=>pad(union(r,R('light-back','full').dialLabels[i]),6));
+
+  function wipe(name,rect,p,cam,w,h) {
+    if(p<=0)return;
+    region([rect[0],rect[1],rect[2]*p,rect[3]],cam,w,h,()=>patch(name,rect,cam,w,h));
+  }
+  const lightChanges=()=>[{time:F1.click,state:'light-back',target:on(R('light-window').move,0.8,0.55)}];
+  function lightViews(t) {
+    const photo=detailView(F1.t0,[16,208,358,100],()=> 'light-window','full',8);
+    photo.draw=(tk,cam,w,h)=>{
+      patch('light-window',[16,208,358,100],cam,w,h);
+      wipe('light-back',[16,208,358,100],m.settle(tk-F1.click-RELEASE,0.52),cam,w,h);
+    };
+    const view=detailView(F1.t0,[16,378,358,355],()=> 'light-window','full',8);
+    view.draw=(tk,cam,w,h)=>{
+      const a=R('light-window','full'),age=tk-F1.click-RELEASE;
+      patch('light-window-gauge',[16,378,358,355],cam,w,h);
+      // The active-band ink changes through the native gauge's own rectangle.
+      // The captured knob is isolated by its circular silhouette and travels
+      // along the same logarithmic arc as the working app.
+      const dial=a.dial;
+      const center=[dial[0]+144,dial[1]+126];
+      const [cx,cy]=toCard(cam,w,h,...center);
+      g.save();g.beginPath();g.arc(cx,cy,110*cam.k,Math.PI,2*Math.PI);
+      g.arc(cx,cy,98*cam.k,2*Math.PI,Math.PI,true);g.closePath();
+      // Include the two native outer caps below the arc baseline as well.
+      for(const side of [-1,1]) {g.moveTo(cx+side*104*cam.k+6*cam.k,cy);g.arc(cx+side*104*cam.k,cy,6*cam.k,0,Math.PI*2);}
+      g.clip();
+      wipe('light-back-gauge',[dial[0]+32,dial[1]+16,224,120],m.settle(age,0.75),cam,w,h);g.restore();
+      // Both complete words change ink together, with six native pixels
+      // beyond both weights' bounds. Never wipe across the glyphs.
+      const labelInk=m.settle(age,0.6);
+      lightLabelBoxes().forEach(r=>region(r,cam,w,h,()=>{
+        g.save();g.globalAlpha*=labelInk;patch('light-back-gauge',r,cam,w,h);g.restore();
+      }));
+      const log=v=>(Math.log10(v)-Math.log10(50))/(Math.log10(40000)-Math.log10(50));
+      const angle=v=>Math.round(log(v)*1800)/1800; // app SVG's 0.1° precision
+      const p=m.settle(age,1.05),theta=Math.PI*(1+lerp(angle(12000),angle(1800),p));
+      const knob=[center[0]+104*Math.cos(theta),center[1]+104*Math.sin(theta)];
+      const initial=Math.PI*(1+angle(12000)),src=[center[0]+104*Math.cos(initial)-9,center[1]+104*Math.sin(initial)-9,18,18];
+      const [kx,ky]=toCard(cam,w,h,...knob);
+      g.save();g.beginPath();g.arc(kx,ky,8.25*cam.k,0,Math.PI*2);g.clip();
+      fragment('light-window',src,[knob[0]-9,knob[1]-9,18,18],cam,w,h);g.restore();
+      roll('light-window','light-back',[124,a.lux[1],144,a.lux[3]],tk,F1.click+RELEASE,0.6,cam,w,h);
+      const verdictLine=[120,550,150,20];
+      region(verdictLine,cam,w,h,()=>roll('light-window','light-back',verdictLine,tk,F1.click+0.24,0.45,cam,w,h));
+      roll('light-window','light-back',a.verdict,tk,F1.click+0.46,0.55,cam,w,h);
+      wipe('light-back',a.move,m.settle(age,0.35),cam,w,h);
+    };
+    return [photo,view];
+  }
+  function rescueChanges() {
+    return [
+      {time:F2.click,state:'rescue-1',target:on([37,509,26,26],0.85,0.85)},
+      {time:F2.second,state:'rescue-2',target:on([37,565,26,26],0.85,0.85)},
+      {time:F2.remind,state:'rescue-remind',target:on(R('rescue').remind,0.92,0.78)},
+    ];
+  }
+  // A single CPU tile owns the reminder's complete native silhouette. Its
+  // blank native backings mix before the two recorded labels roll; no vector
+  // clip or second button capture can re-antialias the outer border.
+  const buttonLayer=document.createElement('canvas');
+  const buttonCtx=buttonLayer.getContext('2d',{willReadFrequently:true});
+  function reminder(t,event,cam,w,h) {
+    const b=R('rescue','full').remind,box=pad(b,4),scale=cap('rescue','full').scale;
+    const slot=[b[0]+18,b[1]+12,b[2]-36,28],age=t-event.time-RELEASE;
+    buttonLayer.width=box[2]*scale;buttonLayer.height=box[3]*scale;buttonCtx.reset();
+    const draw=(name,source,dest=source)=>{
+      const c=cap(name,'full');
+      buttonCtx.drawImage(c.img,(source[0]-c.rect[0])*scale,(source[1]-c.rect[1])*scale,source[2]*scale,source[3]*scale,
+        (dest[0]-box[0])*scale,(dest[1]-box[1])*scale,dest[2]*scale,dest[3]*scale);
+    };
+    draw('rescue-2',box);
+    // Clear just the original label with its actual flat button backing.
+    draw('rescue-2',[b[0]+20,b[1]+3,2,2],slot);
+    buttonCtx.globalAlpha=m.out(age/0.2);draw('rescue-remind-ground',box);buttonCtx.globalAlpha=1;
+    const q=m.settle(age,0.3);
+    buttonCtx.save();buttonCtx.beginPath();buttonCtx.rect((slot[0]-box[0])*scale,(slot[1]-box[1])*scale,slot[2]*scale,slot[3]*scale);buttonCtx.clip();
+    buttonCtx.globalCompositeOperation='lighten';draw('rescue-2',slot,shift(slot,0,-q*slot[3]));
+    buttonCtx.globalCompositeOperation='darken';draw('rescue-remind',slot,shift(slot,0,(1-q)*slot[3]));buttonCtx.restore();
+    const [x,y]=toCard(cam,w,h,box[0],box[1]);
+    g.drawImage(buttonLayer,x,y,box[2]*cam.k,box[3]*cam.k);
+  }
+  function rescueViews(t) {
+    const view=detailView(F2.t0,[20,462,350,277],()=> 'rescue','full',8);
+    view.draw=(tk,cam,w,h)=>{
+      patch('rescue',[20,462,350,277],cam,w,h);
+      const a=R('rescue','full');
+      rescueChanges().forEach((e,i)=>{
+        if(tk<e.time+(i<2?0:RELEASE))return;
+        const before=i?'rescue-'+i:'rescue';
+        if(i<2) {
+          const box=a.checkBoxes[i],icon=R(e.state,'full').checkIcons[i];
+          const [cx,cy]=toCard(cam,w,h,box[0]+box[2]/2,box[1]+box[3]/2);
+          const fill=m.out((tk-e.time)/0.2);
+          // Native green backing grows from the circle's centre, once.
+          g.save();g.beginPath();g.arc(cx,cy,box[2]/2*cam.k*fill,0,Math.PI*2);g.clip();
+          fragment(e.state,[box[0]+12,box[1]+3,2,2],box,cam,w,h);g.restore();
+          // Reveal the captured check along its short stem, then long arm.
+          // No text colour wipe or other card motion accompanies the tick.
+          const q=m.settle(tk-e.time,0.25),c=cap(e.state,'full'),scale=c.scale;
+          // An empty stroke is a no-op for destination-in in Chrome. Do not
+          // paint the unmasked native square on the exact press frame.
+          if(q>0) {
+          tickLayer.width=Math.ceil(icon[2]*scale);tickLayer.height=Math.ceil(icon[3]*scale);tickCtx.reset();
+          tickCtx.drawImage(c.img,(icon[0]-c.rect[0])*scale,(icon[1]-c.rect[1])*scale,icon[2]*scale,icon[3]*scale,0,0,tickLayer.width,tickLayer.height);
+          tickCtx.globalCompositeOperation='destination-in';
+          const points=[[5.5/24,12.5/24],[9.7/24,16.7/24],[18.5/24,7.5/24]],stem=0.318;
+          tickCtx.beginPath();tickCtx.moveTo(points[0][0]*tickLayer.width,points[0][1]*tickLayer.height);
+          if(q<stem)tickCtx.lineTo(lerp(points[0][0],points[1][0],q/stem)*tickLayer.width,lerp(points[0][1],points[1][1],q/stem)*tickLayer.height);
+          else {tickCtx.lineTo(points[1][0]*tickLayer.width,points[1][1]*tickLayer.height);tickCtx.lineTo(lerp(points[1][0],points[2][0],(q-stem)/(1-stem))*tickLayer.width,lerp(points[1][1],points[2][1],(q-stem)/(1-stem))*tickLayer.height);}
+          tickCtx.lineWidth=4/24*tickLayer.width;tickCtx.lineCap='round';tickCtx.lineJoin='round';tickCtx.stroke();
+          const [x,y]=toCard(cam,w,h,icon[0],icon[1]);g.drawImage(tickLayer,x,y,icon[2]*cam.k,icon[3]*cam.k);
+          }
+          roll(before,e.state,pad(a.checkCount,1),tk,e.time+RELEASE,0.3,cam,w,h);
+        } else reminder(tk,e,cam,w,h);
+      });
+    };
+    return [view];
+  }
+  function wateringChanges() {
+    return [F3.click1,F3.click2,F3.click3].map((time,i)=>({time,state:`watered-${i+1}`,target:on(R(i?`watered-${i}`:'today').water[0],0.84,0.80)}));
+  }
+  // Each due row is one immutable native tile. Resolve one layout only;
+  // the old/new full captures are never layered over one another.
+  const WATER_COUNT=[20,155,236,23],WATER_WEATHER=[20,178,350,22];
+  const waterRowTile=i=>pad(R('today','full').cards[i],8);
+  function waterPhase(t) {
+    const actions=wateringChanges();let index=-1;
+    actions.forEach((e,i)=>{if(t>=e.time+WATER_MOVE)index=i;});
+    if(index<0)return {index,p:0,before:'today',after:'today',time:actions[0].time};
+    const e=actions[index];
+    return {index,p:m.out((t-e.time-WATER_MOVE)/0.43),before:index?`watered-${index}`:'today',after:e.state,time:e.time};
+  }
+  function waterRing(t,j,dy,cam,w,h) {
+    const action=wateringChanges()[j],age=t-action.time-RELEASE;
+    if(age<0)return;
+    const frame=Math.min(60,Math.floor(clamp(age/WATER_RING)*60+1e-7));
+    const c=cap(`ring-${String(frame).padStart(2,'0')}`,'rings');
+    const native=A.sets.rings.rects.ring.ring;
+    // Position relative to the source app row, independent of capture scroll.
+    const row=R('today','full').cards[j],dest=[native[0],row[1]+(row[3]-76)/2,76,76];
+    const [cx,cy]=toCard(cam,w,h,dest[0]+38,dest[1]+38+dy);
+    g.save();g.beginPath();g.arc(cx,cy,40*cam.k,0,Math.PI*2);g.arc(cx,cy,34*cam.k,0,Math.PI*2,true);g.clip();
+    const [x,y]=toCard(cam,w,h,dest[0]-2,dest[1]-2+dy);
+    g.drawImage(c.img,x,y,80*cam.k,80*cam.k);g.restore();
+  }
+  function waterViews(t) {
+    const view=detailView(F3.t0,[12,152,366,434],()=> 'today','full',8);
+    view.draw=(tk,cam,w,h)=>{
+      patch('today-ground',[12,152,366,434],cam,w,h);
+      const {index,p,before,after,time}=waterPhase(tk);
+      patch('today',WATER_COUNT,cam,w,h);patch('today',WATER_WEATHER,cam,w,h);
+      if(index>=0) {
+        patch(before,WATER_COUNT,cam,w,h);
+        roll(before,index===2?'today-ground':after,WATER_COUNT,tk,time+WATER_MOVE,0.38,cam,w,h);
+        if(index===2) {
+          roll(before,'today-ground',WATER_WEATHER,tk,time+WATER_MOVE,0.30,cam,w,h);
+          const icon=[18,157,52,52],title=[82,157,200,28],streak=R(after,'full').doneStreak;
+          wipe('watered-3-banner',icon,m.settle(tk-time-WATER_MOVE-0.18,0.35),cam,w,h);
+          roll('today-ground','watered-3-banner',title,tk,time+WATER_MOVE+0.18,0.35,cam,w,h);
+          roll('watered-3-banner','watered-3',streak,tk,time+WATER_MOVE+0.35,0.3,cam,w,h);
+        }
+      }
+      // Collapse the pressed row through its own top edge. All remaining
+      // rows slide into that gap on motion.out with alpha exactly one.
+      const first=Math.max(0,index),old=R(before,'full');
+      for(let j=first;j<3;j++) {
+        const source=waterRowTile(j),r=R('today','full').cards[j];
+        const beforeY=old.cards[j-first]?.[1]??r[1];
+        if(j===index) {
+          const dest=shift(source,0,beforeY-r[1]-8*p),height=source[3]*(1-p);
+          if(height>0)region([dest[0],dest[1],dest[2],height],cam,w,h,()=>{fragment('today',source,dest,cam,w,h);waterRing(tk,j,dest[1]-source[1],cam,w,h);});
+        } else {
+          const afterY=index<0?beforeY:R(after,'full').cards[j-index-1][1];
+          const dy=lerp(beforeY,afterY,p)-r[1];
+          fragment('today',source,shift(source,0,dy),cam,w,h);waterRing(tk,j,dy,cam,w,h);
+        }
+      }
+      if(index>=0) {
+        const next=R(after,'full'),previous=R(before,'full');
+        const dy=(index?previous.watered[1]-next.watered[1]:24)*(1-p);
+        const label=[22,next.watered[1],180,16],destLabel=shift(label,0,dy);
+        // A separate label viewport rolls the native count while the label
+        // travels with the section. Its neighbours never share this mask.
+        region(destLabel,cam,w,h,()=>{
+          if(index) {
+            const oldLabel=[22,previous.watered[1],180,16],q=m.out((tk-time-WATER_MOVE)/0.38);
+            fragment(before,oldLabel,shift(destLabel,0,-16*q),cam,w,h);
+            fragment(after,label,shift(destLabel,0,16*(1-q)),cam,w,h);
+          } else fragment(after,label,shift(destLabel,0,16*(1-p)),cam,w,h);
+        });
+        // Native panel edges are narrow independent tiles, separate from
+        // the rows. Each content row uses the same final capture throughout.
+        const list=next.wateredList,qNew=m.out((tk-time-WATER_MOVE-0.14)/0.29);
+        const liveHeight=list[3]-68*(1-qNew),top=[12,list[1]-8,366,11],bottom=[12,list[1]+list[3]-3,366,11];
+        const edge=(source,dest)=>region([dest[0],dest[1],dest[2]*(index?1:p),dest[3]],cam,w,h,()=>fragment(after,source,dest,cam,w,h));
+        edge(top,shift(top,0,dy));
+        edge(bottom,shift(bottom,0,dy+liveHeight-list[3]));
+        for(let j=0;j<=index;j++) {
+          const row=next.waterRows[j],dest=shift(row,0,dy),canonical=R('watered-3','full').waterRows[j];
+          const sides=[[12,row[1],9,row[3]],[369,row[1],9,row[3]]];
+          const q=j===index?qNew:1;
+          sides.forEach(r=>region([r[0],r[1]+dy,r[2],r[3]*q],cam,w,h,()=>fragment(after,r,shift(r,0,dy),cam,w,h)));
+          region([dest[0],dest[1],dest[2],dest[3]*q],cam,w,h,()=>{
+            // Clip the native tiles to the native list outline; this keeps
+            // its outer corners while preserving every row's source scale.
+            const [x,y]=toCard(cam,w,h,21,list[1]+1+dy);
+            g.save();roundRect(g,x,y,348*cam.k,(liveHeight-2)*cam.k,21*cam.k);g.clip();
+            fragment('watered-3',canonical,shift(dest,0,24*(1-q)),cam,w,h);g.restore();
+          });
+        }
+      }
+    };
+    // The card holds its place after the last result (it shouldn't move down).
+    return [view];
+  }
+
+  function featureCursor(t,f) {
+    const actions = f === F1 ? lightChanges() : f === F2 ? rescueChanges() : wateringChanges();
+    // Resolve every endpoint at its own hit time, so a resizing card cannot drag
+    // the pointer during a hold. Camera rests end at least .08 s before each hit.
+    const targets = actions.map(a => {
+      const L=layoutFor(f,a.time),i=f===F1?1:0,card=L.cards[i];
+      const r=framing(L.views[i].keys[0][1]);
+      const cam={x:r[0]+r[2]/2,y:r[1]+r[3]/2,k:card[2]/r[2]};
+      const point=toCard(cam,card[2],card[3],...a.target);
+      return {...a,point:{x:point[0]+card[0],y:point[1]+card[1]}};
+    });
+    const first=targets[0],last=targets.at(-1),left=f===F2;
+    const path=[{at:first.time-1.03,from:{x:left?-0.08*W:1.08*W,y:first.point.y+0.15*W},to:first.point,dur:0.63,curve:left?-0.16:0.16}];
+    targets.slice(1).forEach((a,i)=>path.push({at:targets[i].time+(f===F3?1.08:f===F2?0.27:0.36),to:a.point,dur:a.time-targets[i].time-(f===F3?1.16:f===F2?0.35:0.44),curve:i%2?-0.15:0.15}));
+    path.push({at:last.time+0.35,to:{x:left?-0.08*W:1.08*W,y:last.point.y+0.12*W},dur:0.45,exit:true});
+    m.drawCursor(g,{t,path,press:targets.map(a=>a.time),theme:{accent:f===F2&&t<F2.remind?'transparent':ACCENT,seed:FEATURES.indexOf(f)+17}});
+  }
+  function feature(t, f) {
+    const L = layoutFor(f,t), colours = ON[f.ground], enter = entryAt(f);
+    g.fillStyle = f.ground === 'light' ? LIGHT : DARK; g.fillRect(0, 0, W, H);
+    drawTitle(f,L.block,L.tx,L.ty,L.align,t,colours,enter);
+    if (f===F2) {
+      const y=L.ty+L.block.height+3*U, bottom=L.cards[0][1]-3*U;
+      const box=tall?[margin(),y,column(),Math.max(0,bottom-y)]:
+        wide?[margin(),y,W*.33,H*.90-y]:[margin(),y,W*.20,H*.90-y];
+      plant('dot',box,t,enter+0.15);
+    }
+    const rendered=[];
+    if(!tall&&!wide&&f===F1) {
+      // One container keeps the photo attached throughout the entrance and
+      // living drift, with one border/shadow and no seam between the panels.
+      const [photo,meter]=L.cards,dy=-0.009*W*m.inOut((t-F1.click-1.15)/(F2.t0-F1.click-1.15));
+      const stack=[photo[0],photo[1]+dy,photo[2],photo[3]+meter[3]];
+      drawCard(stack,f.ground,t,enter+3*F,()=>{
+        L.views.forEach((v,i)=>{
+          const card=L.cards[i],r=framing(v.keys[0][1]),w=card[2],h=card[3];
+          const cam={x:r[0]+r[2]/2,y:r[1]+r[3]/2,k:w/r[2]};
+          rendered[i]={card,cam};
+          g.save();g.translate(0,card[1]-photo[1]);
+          g.beginPath();g.rect(0,0,w,h);g.clip();
+          v.draw(t,cam,w,h);
+          hoverUI(t,f,i,cam,w,h);pressUI(t,f,i,cam,w,h);
+          g.restore();
+        });
+      });
+    } else L.views.forEach((v,i)=> {
+      const card=focusedCard(v.keys,t,L.cards[i]);
+      if(f!==F3) {
+        const last=f===F1?F1.click+1.15:F2.remind+0.65;
+        const until=f===F1?F2.t0:F3.t0;
+        card[1]-=0.009*W*m.inOut((t-last)/(until-last));
+      }
+      drawCard(card,f.ground,t,enter+((f===F2?1:2)+i)*F,(w,h)=> {
+        const r=framing(v.keys[0][1]);
+        const cam=v.exact ? {x:r[0]+r[2]/2,y:r[1]+r[3]/2,k:w/r[2]} : camOn(v.keys,t,[0,0,w,h],v.maxK,v.bounds);
+        rendered[i]={card,cam};
+        v.draw(t,cam,w,h);
+        hoverUI(t,f,i,cam,w,h); pressUI(t,f,i,cam,w,h);
+      });
+    });
+    if(rendered.length===L.views.length) featureCursor(t,f);
+  }
+
+  function hoverUI(t,f,index,cam,w,h) {
+    if(index!==(f===F1?1:0))return;
+    const actions=f===F1?lightChanges():f===F2?rescueChanges():wateringChanges();
+    actions.forEach((a,i)=>{
+      if(f===F2&&i<2)return; // the native disc is the check's only fill
+      const r=f===F1?R('light-window').move:f===F2?(i<2?[37,509+56*i,26,26]:R('rescue').remind):R(i?`watered-${i}`:'today').water[0];
+      const start=Math.max(a.time-(i?0.32:0.62),i?actions[i-1].time+(f===F3?1.08:f===F2?0.27:0.36):-Infinity),on=m.settle(t-start,0.25)*(1-m.out((t-a.time)/0.1));
+      if(on<=0)return;
+      const [x,y]=toCard(cam,w,h,r[0],r[1]);
+      g.save();g.globalCompositeOperation='multiply';g.globalAlpha*=on*0.2;
+      g.fillStyle='#9CC57A';roundRect(g,x,y,r[2]*cam.k,r[3]*cam.k,(f===F3?12:13)*cam.k);g.fill();g.restore();
+    });
+  }
+
+  // Press the existing captured control on the hit frame, for the exact same
+  // .06 s interval as drawCursor. Multiply tint preserves all real UI pixels.
+  function pressUI(t,f,index,cam,w,h) {
+    if(index !== (f===F1?1:0)) return;
+    const actions=f===F1?[{time:F1.click,rect:R('light-window').move}]:f===F2?[
+      {time:F2.click,rect:[37,509,26,26],radius:13},
+      {time:F2.second,rect:[37,565,26,26],radius:13},
+      {time:F2.remind,rect:R('rescue').remind},
+    ]:wateringChanges().map((e,i)=>({...e,rect:R(i?`watered-${i}`:'today').water[0]}));
+    for(const a of actions) if(!(f===F2&&a.radius===13)&&t>=a.time && t<a.time+(f===F3?0.12:0.06)) {
+      const [x,y]=toCard(cam,w,h,a.rect[0],a.rect[1]);
+      g.save(); g.globalCompositeOperation='multiply';
+      g.fillStyle='#b7c3aa';
+      if(f===F3) {
+        roundRect(g,x,y,a.rect[2]*cam.k,a.rect[3]*cam.k,12*cam.k);g.clip();
+        const [px,py]=toCard(cam,w,h,...a.target),r=Math.hypot(a.rect[2],a.rect[3])*cam.k;
+        g.beginPath();g.arc(px,py,r*Math.max(.04,m.out((t-a.time)/.12)),0,Math.PI*2);g.clip();
+      }
+      roundRect(g,x,y,a.rect[2]*cam.k,a.rect[3]*cam.k,(a.radius??(f===F3?12:16))*cam.k);g.fill();g.restore();
+    }
+  }
+
+  // ---------- ADAPT: Keeper, the cast's current mark, on its cream tile ----------
+  // Cast photography, never invented UI. The complete image rises and fades;
+  // no photo is fully visible on its first frame and no silhouette morphs.
+  function plant(name,box,t,at) {
+    const p=m.settle(t-at,0.55);
+    if(p<=0 || box[3]<=0) return;
+    const img=A.plants[name],k=Math.min(box[2]/img.width,box[3]/img.height);
+    const w=img.width*k,h=img.height*k;
+    g.save();g.globalAlpha*=p;
+    g.drawImage(img,box[0]+(box[2]-w)/2,box[1]+box[3]-h+(1-p)*7*U,w,h);
+    g.restore();
+  }
+  function drawMark(cx,cy,size,alpha=1) {
+    g.save(); g.globalAlpha=alpha;
+    roundRect(g,cx-size/2,cy-size/2,size,size,size*0.25); g.fillStyle=LIGHT; g.fill();
+    g.drawImage(A.brand.mark,cx-size*0.48,cy-size*0.48,size*0.96,size*0.96); g.restore();
+  }
+  // The house helper owns the seed, tile, glyph, lockup slide and final push.
+  // The glyph is the original local SVG; no brand artwork is redrawn.
+  function bookend(t,closing) {
+    const ground=closing?LIGHT:DARK,ink=closing?DARK:LIGHT,secondary=closing?ON.light.line:ON.dark.line;
+    g.fillStyle=ground;g.fillRect(0,0,W,H);
+    const base=closing?BEATS.end:0,size=(closing?20:18)*U;
+    const N=fitLines(g,V.product,DISPLAY(480),{maxSize:11*U,minSize:2.4*U,maxW:column()/1.018-size-3.5*U,maxLines:1});
+    const line=closing?V.promise:V.open;
+    const lineSize=Math.min(4.8*U,column()/1.018/Math.max(1,widthOf(g,SANS(500),100,line))*100);
+    const lockAt=base+(closing?0.8:0.7),cy=0.42*H;
+    // Start the closing container at the push's start. Its seed is still
+    // off-frame; the complete tile is already readable when it slides in.
+    // Close lockup starts .35 s after the container finishes, within .50 s.
+    const markAt=closing?base-0.05:base+0.12;
+    // Keep even a maximum-length wordmark inside the safe column during
+    // the generic lockup slide, then reach its fitted final size on landing.
+    const nameWidth=widthOf(g,DISPLAY(480),N.size,V.product),gap=3.5*U;
+    const slide=m.settle(t-lockAt,0.5),textLeft=W/2-(gap+nameWidth)/2*slide+size/2+gap;
+    const poseSize=Math.min(N.size,N.size*Math.max(1,W-margin()-textLeft)/Math.max(1,nameWidth));
+    const state=m.markReveal(g,{t,at:markAt,cx:W/2,cy,size,
+      bg:{from:closing?'#3E6B3A':LIGHT,to:closing?'#3E6B3A':LIGHT},fg:ground,
+      drawMark:(ctx,{size})=>ctx.drawImage(closing?A.brand.markCream:A.brand.mark,-size*0.48,-size*0.48,size*0.96,size*0.96),
+      lockup:{text:V.product,font:DISPLAY(480)(poseSize),width:nameWidth,color:ink,at:lockAt,dur:0.5,gap,
+        line,lineFont:SANS(500)(lineSize),lineColor:secondary,hold:1.2}});
+    if(closing && V.get && t>=lockAt+0.1) {
+      const at=lockAt+0.1,p=m.settle(t-at,0.4);
+      const ms=Math.min(6*U,0.76*W/widthOf(g,MONO(500),100,V.get)*100);
+      const tw=widthOf(g,MONO(500),ms,V.get),bw=tw+5.2*U,bh=ms*2.3;
+      const y=cy+size*0.82+lineSize*1.6+4*U;
+      g.save();g.translate(W/2,cy);g.scale(state.push,state.push);g.translate(0,-cy);
+      g.beginPath();g.rect(-W/2,y-1,W,bh+3);g.clip();
+      g.translate(0,y+bh/2+(1-p)*(bh+4*U));
+      roundRect(g,-bw/2,-bh/2,bw,bh,bh*0.28);g.fillStyle='#3E6B3A';g.fill();
+      g.lineWidth=0.12*U;g.strokeStyle=UI_LINE;g.stroke();
+      setText(g,MONO(500),ms);g.fillStyle=LIGHT;g.fillText(V.get,-tw/2,capOf(MONO(500),ms)/2);g.restore();
+    }
+  }
+  function open(t) { return bookend(t,false); }
+
+  // ---- the stat (bars 7–8.5): one number counts up; two lines say what it proves ----
+  function parseStat(s) { // "3,534" → { pre, value, dec, commas, post }; anything else counts as text
+    const m = String(s).match(/^([^\d]*)(\d[\d,]*(?:\.\d+)?)(.*)$/);
+    if (!m) return null;
+    const num = m[2].replace(/,/g, ''), dec = (num.split('.')[1] || '').length;
+    return { pre: m[1], value: Number(num), dec, commas: m[2].includes(','), post: m[3] };
+  }
+  const fmt = (S, v) => { let s = v.toFixed(S.dec); if (S.commas) { const [i, d] = s.split('.'); s = i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (d ? '.' + d : ''); } return S.pre + s + S.post; };
+  const COUNT = 1.1; // seconds from 0 to the number
+  const countAt = (t, t0) => m.out((t-t0)/COUNT);
+  function proof(t) {
+    g.fillStyle=DARK;g.fillRect(0,0,W,H);
+    // Leave a small ink-overhang allowance inside the shared safe column,
+    // including while a maximum-length edit travels through the frame edge.
+    const at=proofAt(), x=margin(),width=column()-2*U,S=parseStat(V.stat);
+    const final=S?fmt(S,S.value):V.stat;
+    const number=fitLines(g,final,DISPLAY(480),{maxSize:56*U,minSize:2.4*U,maxW:width,maxLines:1,tracking:-0.035});
+    const shown=S?fmt(S,S.value*countAt(t,at+0.1)):final;
+    // One confident editorial claim, with the same left edge as every title.
+    const context=fitLines(g,V.statSource,SANS(600),{maxSize:4.6*U,minSize:2.4*U,maxW:width,maxLines:2});
+    context.lines.forEach((line,i)=>rise(g,line,x,0.10*H+capOf(SANS(600),context.size)+i*context.size*1.25,SANS(600),context.size,t,at+i*0.1,{colour:ON.dark.line,stagger:0.025,dur:0.4}));
+    const base=0.37*H;
+    if(S && S.value>0 && S.value<=100 && S.dec===0) {
+      const value=S.value*m.inOut((t-at-0.1)/COUNT),n=Math.floor(value),q=m.out(value-n),height=number.size*1.12;
+      g.save();g.beginPath();g.rect(x-2*U,base-capOf(DISPLAY(480),number.size)-number.size*.04,column(),capOf(DISPLAY(480),number.size)+number.size*.16);g.clip();
+      const draw=(text,dy)=>{setText(g,DISPLAY(480),number.size,-.035);g.fillStyle=ON.dark.name;g.fillText(text,x,base+dy);};
+      draw(fmt(S,n),-q*height);
+      if(n<S.value)draw(fmt(S,n+1),(1-q)*height);
+      g.restore();
+    } else rise(g,shown,x,base,DISPLAY(480),number.size,t,at+0.1,{colour:ON.dark.name,tracking:-0.035,stagger:0,dur:0.5});
+    const claim=fitLines(g,V.stat1,DISPLAY(480),{maxSize:9.4*U,minSize:2.4*U,maxW:width,maxLines:2,tracking:-0.025});
+    claim.lines.forEach((line,i)=>rise(g,line,x,0.45*H+i*claim.size*1.1,DISPLAY(480),claim.size,t,at+0.45+i*0.1,{colour:ON.dark.name,tracking:-0.025,stagger:0.045,dur:0.45}));
+    const top=0.45*H+(claim.lines.length-1)*claim.size*1.1+6*U,bottom=0.79*H;
+    const drift=0.008*W*m.inOut((t-at-1.4)/(BEATS.end-at-1.4));
+    ['monty','pickles','fernando'].forEach((name,i)=>plant(name,[x+i*width*0.28,top-drift,width*0.44,Math.max(0,bottom-top)],t,at+0.55+i*0.22));
+    const payoff=fitLines(g,V.stat2,SANS(600),{maxSize:4.8*U,minSize:2.4*U,maxW:width,maxLines:2});
+    payoff.lines.forEach((line,i)=>rise(g,line,x,0.85*H+i*payoff.size*1.25,SANS(600),payoff.size,t,at+0.95+i*0.1,{colour:ON.dark.line,stagger:0.035,dur:0.4}));
+  }
+  function stat(t) { return tall ? proof(t) : releaseProof(t); }
+  function end(t) { return bookend(t,true); }
+
+  // One count, claim and set of the three photographed plants. In wide,
+  // the photographs occupy their own right column; square stacks the claim.
+  function releaseProof(t) {
+    g.fillStyle=DARK;g.fillRect(0,0,W,H);
+    const at=proofAt(),x=margin(),width=wide?W*.43:column()-2*U,S=parseStat(V.stat);
+    const final=S?fmt(S,S.value):V.stat;
+    const context=fitLines(g,V.statSource,SANS(600),{maxSize:4.6*U,minSize:2.6*U,maxW:width,maxLines:2});
+    context.lines.forEach((line,i)=>rise(g,line,x,.10*H+capOf(SANS(600),context.size)+i*context.size*1.25,SANS(600),context.size,t,at+i*.1,{colour:ON.dark.line,stagger:.025,dur:.4}));
+    const number=fitLines(g,final,DISPLAY(480),{maxSize:(wide?44:30)*U,minSize:2.6*U,maxW:width,maxLines:1,tracking:-.035});
+    const base=(wide?.49:.42)*H;
+    if(S&&S.value>0&&S.value<=100&&S.dec===0) {
+      const value=S.value*m.inOut((t-at-.1)/COUNT),n=Math.floor(value),q=m.out(value-n),height=number.size*1.12;
+      g.save();g.beginPath();g.rect(x-2*U,base-capOf(DISPLAY(480),number.size)-number.size*.04,width+2*U,capOf(DISPLAY(480),number.size)+number.size*.16);g.clip();
+      const draw=(text,dy)=>{setText(g,DISPLAY(480),number.size,-.035);g.fillStyle=ON.dark.name;g.fillText(text,x,base+dy);};
+      draw(fmt(S,n),-q*height);if(n<S.value)draw(fmt(S,n+1),(1-q)*height);g.restore();
+    } else rise(g,final,x,base,DISPLAY(480),number.size,t,at+.1,{colour:ON.dark.name,tracking:-.035,stagger:0,dur:.5});
+    const claim=fitLines(g,V.stat1,DISPLAY(480),{maxSize:(wide?8.4:8.0)*U,minSize:2.6*U,maxW:width,maxLines:2,tracking:-.025});
+    const claimTop=base+Math.max(8*U,number.size*.16+capOf(DISPLAY(480),claim.size)+2*U);
+    claim.lines.forEach((line,i)=>rise(g,line,x,claimTop+i*claim.size*1.1,DISPLAY(480),claim.size,t,at+.45+i*.1,{colour:ON.dark.name,tracking:-.025,stagger:.045,dur:.45}));
+    const drift=.008*W*m.inOut((t-at-1.4)/(BEATS.end-at-1.4));
+    const px=wide?.52*W:x,pw=wide?.41*W:width,top=wide?.25*H:claimTop+(claim.lines.length-1)*claim.size*1.1+5*U,bottom=.77*H;
+    ['monty','pickles','fernando'].forEach((name,i)=>plant(name,[px+i*pw*.28,top-drift,pw*.44,Math.max(0,bottom-top)],t,at+.55+i*.22));
+    const payoff=fitLines(g,V.stat2,SANS(600),{maxSize:4.8*U,minSize:2.6*U,maxW:column()-2*U,maxLines:2});
+    payoff.lines.forEach((line,i)=>rise(g,line,x,.85*H+i*payoff.size*1.25,SANS(600),payoff.size,t,at+.95+i*.1,{colour:ON.dark.line,stagger:.035,dur:.4}));
+  }
+
+  const ACTS = [[BEATS.open, open], ...FEATURES.map((f) => [f.t0, (t) => feature(t, f)]), [BEATS.stat, stat], [BEATS.end, end]];
+  const HANDOFFS = [
+    [F1.t0, open, t=>feature(t,F1)],
+    [F2.t0, t=>feature(t,F1), t=>feature(t,F2)],
+    [F3.t0, t=>feature(t,F2), t=>feature(t,F3)],
+    [BEATS.stat, t=>feature(t,F3), stat],
+    [BEATS.end, stat, end],
+  ];
+  function overlap(t, boundary, before, after) {
+    const p=m.inOut((t-boundary+HANDOFF/2)/HANDOFF);
+    // Move each complete scene, including its ground and captured card.
+    // Adjacent clips prevent an off-card cursor or shadow crossing the join.
+    for(const [x,draw] of [[-p*W,before],[(1-p)*W,after]]) {
+      g.save();g.translate(x,0);g.beginPath();g.rect(0,0,W,H);g.clip();draw(t);g.restore();
+    }
+  }
+
+  // ---------- KEEP: drawing, loading; ADAPT: the cues and the score ----------
+  function seek(t, values) {
+    V = { ...DEFAULTS, ...values };
+    shape = SHAPES[V.size] ? V.size : '16:9'; [W, H] = SHAPES[shape]; U = Math.min(W, H) / 100; tall = H > W; wide = W > H;
+    if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+    g.reset();
+    t = clamp(t, 0, DURATION - 1e-6);
+    {
+      const handoff=HANDOFFS.find(([boundary])=>t>=boundary-HANDOFF/2 && t<boundary+HANDOFF/2);
+      if(handoff) { overlap(t,...handoff);return canvas; }
+    }
+    let act = ACTS[0][1];
+    for (const [t0, draw] of ACTS) if (t >= t0 - 1e-9) act = draw;
+    act(t);
+    return canvas;
+  }
+  async function prepare() {
+    await Promise.all([
+      loadFont('Nunito','assets/fonts/nunito-variable.ttf',{weight:'200 900'}),
+      loadFont('Fraunces','assets/fonts/fraunces-variable.ttf',{weight:'100 900'}),
+    ]);
+    for (const set of SETS) A.sets[set] = await (await fetch(`assets/${set}/screens.json`)).json();
+    await Promise.all(SETS.flatMap((set) => Object.values(A.sets[set].captures).map(async (c) => { A.img[`${set}/${c.file}`] = await loadImage(`assets/${set}/${c.file}`); })));
+    A.brand.mark = await loadImage('assets/brand/mark.svg');
+    A.brand.markCream = await loadImage('assets/brand/mark-cream-glyph.svg');
+    await Promise.all(['monty','pickles','fernando','dot'].map(async name=>{A.plants[name]=await loadImage(`assets/plants/${name}.png`);}));
+    await document.fonts.ready;
+  }
+
+  // sound: the kit on the cues (scripts/sounds/kit.json)
+  function cues(values) {
+    V = { ...DEFAULTS, ...values };
+    const portrait=V.size==='9:16';
+    const out = [], add = (t, type, gain, motion) => out.push({ t: +t.toFixed(4), type, ...(gain ? { gain } : {}), ...(motion ? { motion } : {}) });
+    // The adapted cards enter at different screen positions. Their sweeps
+    // mark the shared push onset; result tones mark the native region's
+    // first move, and soft pops follow the staggered photographs. Preserve
+    // the approved portrait soundtrack below byte-for-byte.
+    if(!portrait) {
+      add(.12,'pop',.5);
+      HANDOFFS.forEach(([time])=>add(time-HANDOFF/2,'swish',.35,{kind:'container',travel:1}));
+      [F1.click,F2.click,F2.second,F2.remind,F3.click1,F3.click2,F3.click3].forEach(t=>add(t,'tap',.7));
+      add(F1.click+RELEASE,'chime',.5);
+      add(F2.remind+RELEASE,'chime',.5);
+      [F3.click1,F3.click2,F3.click3].forEach(t=>add(t+WATER_MOVE,'chime',.42));
+      [0,.22,.44].forEach((dt,i)=>add(proofAt()+.55+dt,'pop',.4+i*.05));
+      add(BEATS.end+.8,'chime',.5);
+      return out;
+    }
+    {
+      add(0.12,'pop',0.55);
+      // Swishes only follow the large card entrances, well below the taps.
+      FEATURES.forEach(f=>add(f===F1?f.t0+0.2:f.t0-HANDOFF/2,'swish',0.35,{kind:'container',travel:1})); // whole-scene pushes
+      [F1.click,F2.click,F2.second,F2.remind,F3.click1,F3.click2,F3.click3].forEach(t=>add(t,'tap',0.7));
+      [F1.click,F2.remind].forEach(t=>add(t+0.18,'chime',0.5));
+      [F3.click1,F3.click2,F3.click3].forEach(t=>add(t+WATER_MOVE,'chime',0.42));
+      add(BEATS.stat-HANDOFF/2,'swish',0.35,{kind:'container',travel:1});add(BEATS.stat,'hit',0.3);
+      // a soft pop as each number lands (1, then 2 with the first plant, then 3 with the second), building a little
+      [[0,.4],[.1,.45],[.3,.5]].forEach(([dt,g])=>add(BEATS.stat+dt,'pop',g));
+      add(BEATS.end,'hit',0.5);add(BEATS.end+0.8,'chime',0.5);
+      return out;
+    }
+  }
+
+  const music = {
+    bpm: BPM, duration: DURATION, root: 50,
+    chords: [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]],
+    sections: [
+      { from: 0, to: 1, pad: 0.65, hats: 0.55, clap: 0.3 },
+      { from: 1, to: 4, kick: 0.8, hats: 0.7, clap: 0.55, bass: 0.55, pad: 0.55 },
+      { from: 4, to: 7, kick: 0.85, hats: 0.8, clap: 0.65, bass: 0.6, pad: 0.6 },
+      { from: 7, to: 9, kick: 0.95, hats: 0.9, clap: 0.75, bass: 0.65, pad: 0.7 },
+      { from: 9, to: 10, kick: 0.65, hats: 0.6, clap: 0.4, bass: 0.45, pad: 0.8 },
+    ],
+    breaks: [[BEATS.stat - BEAT / 2, BEATS.stat], [BEATS.end - BEAT / 2, BEATS.end]],
+  };
+  const STATES = [[0, 'Open'], [F1.t0, 'Light check'], [F2.t0, 'Rescue guides'], [F3.t0, 'Watered today'], [BEATS.stat, 'Stat'], [BEATS.end, 'End']];
+  window.template = {
+    fps: FPS, duration: DURATION, sizes: SHAPES, width: W, height: H, defaults: () => ({ size: '9:16', ...DEFAULTS }), fields: FIELDS, states: STATES,
+    prepare, seek: (t, values) => seek(t, values), cues, music,
+    // Zero shutter during region changes: native UI stays sharp while its
+    // masked numbers, checks and rows move at constant source scale.
+    shutters: [F1.click,F2.click,F2.second,F2.remind,F3.click1,F3.click2,F3.click3].map(t=>[t,t+RELEASE+RESULT,0]),
+    cuts: [F1.t0, at(1,2.5), F3.click3+0.08, BEATS.end],
+    // Stress samples cover settled layouts and complete transition endpoints.
+    // Sliding frame-edge crossings are reviewed in dense strips and the max-edit audit.
+    keyTimes: [0,0.13,0.35,0.7,0.95,1.2,1.8,19.95,
+      ...[F1.t0,F2.t0,F3.t0,BEATS.stat,BEATS.end].flatMap(t=>[-.26,.26].map(dt=>t+dt)),
+      ...[F1.click,F2.click,F2.second,F2.remind].flatMap(t=>[-.1,0,.08,.2,.35,.65,1.1].map(dt=>t+dt)),
+      ...[F3.click1,F3.click2,F3.click3].flatMap(t=>[-.1,0,.08,.25,.5,.75,1.06,1.25,1.49].map(dt=>t+dt)),
+      BEATS.stat+.6,BEATS.stat+1.1,BEATS.stat+1.75,BEATS.end+.4,BEATS.end+.6,BEATS.end+1.1],
+  };
+  const q = new URLSearchParams(location.search);
+  if (q.has('render') || window.parent !== window) document.getElementById('credit').hidden = true;
+  if (window.parent === window && !q.has('render')) prepare().then(() => { const t0 = performance.now(); const loop = () => { seek(((performance.now() - t0) / 1000) % DURATION, { size: q.get('size') || '9:16' }); requestAnimationFrame(loop); }; loop(); });
+})();
+</script>

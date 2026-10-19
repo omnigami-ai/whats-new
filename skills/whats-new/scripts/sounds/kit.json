@@ -1,0 +1,100 @@
+{
+  "tap": {
+    "files": [
+      "tap.wav"
+    ],
+    "lead": 0.0,
+    "duration": 0.12,
+    "about": "A solid, cushioned fingertip contact with a low, warm body; the default cursor tap."
+  },
+  "click": {
+    "files": [
+      "click.wav"
+    ],
+    "lead": 0.0,
+    "duration": 0.215,
+    "about": "A firm, solid press with a short settle after it; a little firmer and longer than tap."
+  },
+  "tick": {
+    "files": [
+      "tick-1.wav",
+      "tick-2.wav",
+      "tick-3.wav"
+    ],
+    "lead": 0.0,
+    "duration": 0.07,
+    "about": "A muted key contact; three equally calibrated timbres for fast typing."
+  },
+  "toggle": {
+    "files": [
+      "toggle.wav"
+    ],
+    "lead": 0.0,
+    "duration": 0.17,
+    "about": "Two restrained latch contacts, 38 ms apart, with a slight change in weight."
+  },
+  "pop": {
+    "files": [
+      "pop.wav"
+    ],
+    "lead": 0.0,
+    "duration": 0.185,
+    "about": "A soft, rounded arrival with a light, felt attack; no hollow ring, droplet or blip."
+  },
+  "swish": {
+    "files": [
+      "swish.wav"
+    ],
+    "lead": 0.1248,
+    "duration": 0.65,
+    "about": "A short, quiet swell of air for camera/container travel >25% of the frame; never a UI change."
+  },
+  "whoosh": {
+    "files": [
+      "whoosh.wav"
+    ],
+    "lead": 0.1409,
+    "duration": 0.73,
+    "about": "Quiet, rounded air for camera/container travel >25% of the frame; never a UI change."
+  },
+  "sparkle": {
+    "files": [
+      "sparkle.wav"
+    ],
+    "lead": 0.0,
+    "duration": 1.08,
+    "about": "A quiet glint of damped glass that rings out, without air under it, high bells or a glitter trail."
+  },
+  "chime": {
+    "files": [
+      "chime.wav"
+    ],
+    "lead": 0.0,
+    "duration": 0.67,
+    "about": "A restrained warm-glass confirmation, two low notes with a brief soft tail."
+  },
+  "ping": {
+    "files": [
+      "ping.wav"
+    ],
+    "lead": 0.0,
+    "duration": 0.72,
+    "about": "One centred, damped-glass notification that rings out; no stereo beating or shimmer."
+  },
+  "riser": {
+    "files": [
+      "riser.wav"
+    ],
+    "lead": 1.0259,
+    "duration": 1.38,
+    "about": "A soft breath that opens into a reveal and crests on the cue, then eases off; no climbing synth."
+  },
+  "hit": {
+    "files": [
+      "hit.wav"
+    ],
+    "lead": 0.0,
+    "duration": 0.48,
+    "about": "A low, cushioned settle for a landing; audible body without a long sub drop."
+  }
+}

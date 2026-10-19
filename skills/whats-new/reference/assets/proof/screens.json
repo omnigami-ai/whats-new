@@ -1,0 +1,36 @@
+{
+ "url": "http://127.0.0.1:4412/lamplit/app/#/runs/52318",
+ "viewport": [
+  1440,
+  900
+ ],
+ "captures": {
+  "fanout-proof": {
+   "file": "fanout-proof@5.webp",
+   "scale": 5,
+   "rect": [
+    445,
+    248,
+    380,
+    83
+   ]
+  }
+ },
+ "rects": {
+  "fanout-proof": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "proof": [
+    465,
+    275.5,
+    325.13,
+    22
+   ]
+  }
+ },
+ "typed": {}
+}

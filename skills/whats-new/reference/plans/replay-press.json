@@ -1,0 +1,10 @@
+{
+  "url": "http://127.0.0.1:4437/lamplit/app/#/runs/4812",
+  "viewport": "desktop",
+  "ready": "[data-ready]",
+  "rects": { "button": "[data-action=\"replay-from-step\"]" },
+  "steps": [
+    { "rects": "failed" },
+    { "drag": [[1270,120],[1270,120]], "capture": "replay-pressed", "frames": 2, "rect": [236,60,1192,800], "scale": 3 }
+  ]
+}

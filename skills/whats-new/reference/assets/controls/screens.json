@@ -1,0 +1,95 @@
+{
+ "url": "http://127.0.0.1:4437/lamplit/app/#/runs/4812",
+ "viewport": [
+  1440,
+  900
+ ],
+ "captures": {
+  "replay-idle": {
+   "file": "replay-idle@5.webp",
+   "scale": 5,
+   "rect": [
+    1173.38,
+    96,
+    206.63,
+    48
+   ]
+  },
+  "replay-held-01": {
+   "file": "replay-held-01@5.webp",
+   "scale": 5,
+   "rect": [
+    1173.38,
+    96,
+    206.63,
+    48
+   ]
+  },
+  "replay-held-02": {
+   "file": "replay-held-02@5.webp",
+   "scale": 5,
+   "rect": [
+    1173.38,
+    96,
+    206.63,
+    48
+   ]
+  },
+  "kept-first": {
+   "file": "kept-first@5.webp",
+   "scale": 5,
+   "rect": [
+    465,
+    385.5,
+    279.25,
+    26
+   ]
+  },
+  "kept-second": {
+   "file": "kept-second@5.webp",
+   "scale": 5,
+   "rect": [
+    465,
+    427.5,
+    351.16,
+    26
+   ]
+  },
+  "job-label": {
+   "file": "job-label@6.webp",
+   "scale": 6,
+   "rect": [
+    260,
+    228,
+    190,
+    36
+   ]
+  }
+ },
+ "rects": {
+  "queued": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "kept": [
+    [
+     465,
+     385.5,
+     279.25,
+     26
+    ],
+    [
+     465,
+     427.5,
+     351.16,
+     26
+    ]
+   ],
+   "button": null
+  }
+ },
+ "typed": {}
+}

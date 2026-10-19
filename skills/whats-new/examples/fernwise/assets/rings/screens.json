@@ -1,0 +1,636 @@
+{
+ "url": "http://localhost:4406/fernwise/app/#/today",
+ "viewport": [
+  390,
+  844
+ ],
+ "captures": {
+  "ring-00": {
+   "file": "ring-00@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-01": {
+   "file": "ring-01@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-02": {
+   "file": "ring-02@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-03": {
+   "file": "ring-03@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-04": {
+   "file": "ring-04@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-05": {
+   "file": "ring-05@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-06": {
+   "file": "ring-06@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-07": {
+   "file": "ring-07@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-08": {
+   "file": "ring-08@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-09": {
+   "file": "ring-09@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-10": {
+   "file": "ring-10@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-11": {
+   "file": "ring-11@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-12": {
+   "file": "ring-12@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-13": {
+   "file": "ring-13@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-14": {
+   "file": "ring-14@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-15": {
+   "file": "ring-15@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-16": {
+   "file": "ring-16@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-17": {
+   "file": "ring-17@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-18": {
+   "file": "ring-18@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-19": {
+   "file": "ring-19@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-20": {
+   "file": "ring-20@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-21": {
+   "file": "ring-21@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-22": {
+   "file": "ring-22@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-23": {
+   "file": "ring-23@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-24": {
+   "file": "ring-24@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-25": {
+   "file": "ring-25@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-26": {
+   "file": "ring-26@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-27": {
+   "file": "ring-27@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-28": {
+   "file": "ring-28@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-29": {
+   "file": "ring-29@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-30": {
+   "file": "ring-30@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-31": {
+   "file": "ring-31@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-32": {
+   "file": "ring-32@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-33": {
+   "file": "ring-33@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-34": {
+   "file": "ring-34@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-35": {
+   "file": "ring-35@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-36": {
+   "file": "ring-36@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-37": {
+   "file": "ring-37@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-38": {
+   "file": "ring-38@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-39": {
+   "file": "ring-39@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-40": {
+   "file": "ring-40@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-41": {
+   "file": "ring-41@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-42": {
+   "file": "ring-42@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-43": {
+   "file": "ring-43@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-44": {
+   "file": "ring-44@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-45": {
+   "file": "ring-45@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-46": {
+   "file": "ring-46@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-47": {
+   "file": "ring-47@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-48": {
+   "file": "ring-48@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-49": {
+   "file": "ring-49@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-50": {
+   "file": "ring-50@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-51": {
+   "file": "ring-51@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-52": {
+   "file": "ring-52@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-53": {
+   "file": "ring-53@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-54": {
+   "file": "ring-54@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-55": {
+   "file": "ring-55@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-56": {
+   "file": "ring-56@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-57": {
+   "file": "ring-57@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-58": {
+   "file": "ring-58@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-59": {
+   "file": "ring-59@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  },
+  "ring-60": {
+   "file": "ring-60@3.webp",
+   "scale": 3,
+   "rect": [
+    31,
+    52,
+    80,
+    80
+   ]
+  }
+ },
+ "rects": {
+  "ring": {
+   "page": [
+    0,
+    0,
+    390,
+    844
+   ],
+   "ring": [
+    33,
+    54,
+    76,
+    76
+   ]
+  }
+ },
+ "typed": {}
+}

@@ -1,0 +1,14 @@
+{
+ "url":"http://127.0.0.1:4437/lamplit/app/#/runs/4812",
+ "viewport":"desktop","ready":"[data-ready]",
+ "rects":{"kept":".wf-chip*","button":"[data-action=\"replay-from-step\"]"},
+ "steps":[
+  {"capture":"replay-idle","rect":[1173.38,96,206.63,48],"scale":5},
+  {"drag":[[1270,120],[1270,120]],"capture":"replay-held","frames":2,"rect":[1173.38,96,206.63,48],"scale":5},
+  {"rects":"queued"},
+  {"capture":"kept-first","around":".wf-chip","nth":0,"pad":0,"scale":5},
+  {"capture":"kept-second","around":".wf-chip","nth":1,"pad":0,"scale":5},
+  {"eval":"location.hash='#/runs'"},
+  {"capture":"job-label","rect":[260,228,190,36],"scale":6}
+ ]
+}

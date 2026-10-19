@@ -1,0 +1,591 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lamplit · What's new · Fictional company example</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #080b14; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+</style>
+<a id="credit" href="https://x.com/moutaio/status/2103826041831588016" target="_blank" rel="noopener" style="position:fixed;bottom:8px;right:12px;color:#aaa;font:11px sans-serif;z-index:2">Style inspired by @moutaio's video · Independent study</a>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="kit.js"></script>
+<script>
+// Lamplit release clip, rev 8: one choreography and one timeline in every shape; only the layout changes.
+// KEEP: kit.motion reveals/cursors, edge wipes, fixed capture crops attached to whole cards,
+//       measured type, dark-first ground and the release/feature/stat/update grammar.
+// ADAPT: named words, palette, drawMark's image, real captures and sourced release claims.
+// REPLACE: the demonstrated product actions with actions from the user's own working app.
+(() => {
+  const { clamp, lerp, loadFont, loadImage, roundRect, capRatio, motion: M } = window.kit;
+  const FPS = 60;
+  let BPM = 120, BEAT = 60 / BPM;
+  const SHAPES = { '16:9': [1920, 1080], '1:1': [1440, 1440], '9:16': [1080, 1920] };
+  let W = 1080, H = 1920, U = 10.8, shape = '9:16', tall = true, wide = false; // U: 1% of the short side
+
+  const canvas = document.getElementById('c');
+  // a helper canvas, CPU-backed like the film's own (AGENTS.md)
+  function g2d(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c.getContext('2d', { willReadFrequently: true }); }
+  const g = canvas.getContext('2d', { willReadFrequently: true });
+
+  // ---------- ADAPT: the product's colours (cast/lamplit/brand.md) ----------
+  // Dark first: the film sits in Lamplit's own night, one shade under the dashboard's ink, so the
+  // product windows read as lit screens. Amber is the one light: the lamp, running things, the stat.
+  const NIGHT = '#080B14', INK = '#0E1220', LINE = '#2A3150', TEXT = '#ECEAE3', MUTED = '#8D93A8', AMBER = '#FFB23F';
+  const AMBER_RGB = '255,178,63';
+  const SANS = (w) => (s) => `${w} ${s}px "Instrument Sans"`;
+  const MONO = (w) => (s) => `${w} ${s}px "JetBrains Mono"`;
+
+  // ---------- ADAPT: the words, as named fields ----------
+  const DEFAULTS = {
+    category: 'Background jobs for developers.', open: "What's new, 3.2 to 3.4",
+    tag1: 'v3.4', name1: 'Schedules in plain English.', line1: 'Type when a job runs. Lamplit writes the cron.',
+    tag2: 'v3.3', name2: 'Replay from any step.', line2: 'A failed run picks up at the step that failed.',
+    tag3: 'v3.2', name3: 'Fan-out.', line3: '412 images, one step, one row.',
+    statPre: 'Up to', stat: '10,000', stat1: 'child runs from one step.', stat2: 'All of them on one row.', statSource: 'Sample releases · v3.2',
+    promise: 'Every job, in the light.', get: 'npm i lamplit@latest',
+  };
+  const FIELDS = [
+    { id: 'category', type: 'text', label: 'Product category', maxLength: 40 },
+    { id: 'open', type: 'text', label: 'Open line', maxLength: 32, help: 'What this is; a version in it is lit amber.' },
+    { id: 'tag1', type: 'text', label: 'Feature 1, version', maxLength: 8, help: 'Leave a version empty to hide it.' },
+    { id: 'name1', type: 'text', label: 'Feature 1, name', maxLength: 32, help: 'One to five words, with a full stop.' },
+    { id: 'line1', type: 'text', label: 'Feature 1, line', maxLength: 56 },
+    { id: 'tag2', type: 'text', label: 'Feature 2, version', maxLength: 8 },
+    { id: 'name2', type: 'text', label: 'Feature 2, name', maxLength: 32 },
+    { id: 'line2', type: 'text', label: 'Feature 2, line', maxLength: 56 },
+    { id: 'tag3', type: 'text', label: 'Feature 3, version', maxLength: 8 },
+    { id: 'name3', type: 'text', label: 'Feature 3, name', maxLength: 32 },
+    { id: 'line3', type: 'text', label: 'Feature 3, line', maxLength: 56 },
+    { id: 'statPre', type: 'text', label: 'Stat, over the number', maxLength: 24, help: 'A qualifier the source states, e.g. "Up to".' },
+    { id: 'stat', type: 'text', label: 'Stat', maxLength: 8, help: 'A number from the product; it counts up from 0.' },
+    { id: 'stat1', type: 'text', label: 'Stat, line 1', maxLength: 44 },
+    { id: 'stat2', type: 'text', label: 'Stat, line 2', maxLength: 44 },
+    { id: 'statSource', type: 'text', label: 'Stat source', maxLength: 40 },
+    { id: 'promise', type: 'text', label: 'Promise', maxLength: 40 },
+    { id: 'get', type: 'text', label: 'How to get it', maxLength: 32 },
+  ];
+  let V = DEFAULTS;
+
+  // House easing: entrances out/settle, camera travel inOut. No custom motion curves.
+  const ease = (name, p) => name === 'expo' ? M.snap(p) : M.out(p);
+  const crit = (t) => M.settle(t, 0.5);
+
+  // ---------- KEEP: assets ----------
+  const SETS = ['screens', 'screens-narrow', 'details', 'fanout-pressed', 'controls'];
+  const A = { sets: {}, img: {}, brand: {} };
+  const cap = (name, set) => { const c = A.sets[set].captures[name]; return { img: A.img[`${set}/${c.file}`], rect: c.rect, scale: c.scale }; };
+  const R = (state, set) => A.sets[set].rects[state];
+
+  // ---------- KEEP: type. Words rise from behind a mask at their baseline ----------
+  function setText(c, font, size, tracking = 0) { c.font = font(size); c.letterSpacing = `${tracking * size}px`; c.textBaseline = 'alphabetic'; c.textAlign = 'left'; }
+  const widthOf = (c, font, size, s, tracking = 0) => { setText(c, font, size, tracking); return c.measureText(s).width; };
+  const capOf = (font, size) => capRatio(g, font) * size;
+  function wrapAt(c, words, font, size, width, tracking) {
+    const parts = [];
+    for (const word of words) {
+      if (word.length < 20 || widthOf(c, font, size, word, tracking) <= width) { parts.push(word); continue; }
+      let part = '';
+      for (const ch of [...word]) { if (part && widthOf(c, font, size, part + ch, tracking) > width) { parts.push(part); part = ''; } part += ch; }
+      if (part) parts.push(part);
+    }
+    const lines = []; let cur = '';
+    for (const word of parts) { const next = cur ? `${cur} ${word}` : word; if (cur && widthOf(c, font, size, next, tracking) > width) { lines.push(cur); cur = word; } else cur = next; }
+    return cur ? [...lines, cur] : lines;
+  }
+  // the largest size at which the text wraps into maxLines within maxW, then balanced lines
+  function fitLines(c, text, font, { maxSize, minSize, maxW, maxLines, tracking = 0 }) {
+    const words = String(text).trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return { size: maxSize, lines: [] };
+    const fits = (s) => { const l = wrapAt(c, words, font, s, maxW, tracking); return l.length <= maxLines && l.every((x) => widthOf(c, font, s, x, tracking) <= maxW + 0.5) ? l : null; };
+    let size = maxSize, lines = fits(maxSize);
+    if (!lines) {
+      let lo = minSize, hi = maxSize;
+      for (let i = 0; i < 16; i++) { const mid = (lo + hi) / 2, l = fits(mid); if (l) { size = mid; lines = l; lo = mid; } else hi = mid; }
+      if (!lines) { size = minSize; lines = wrapAt(c, words, font, size, maxW, tracking); }
+    }
+    if (lines.length > 1) {
+      let lo = maxW * 0.45, hi = maxW;
+      for (let i = 0; i < 12; i++) { const mid = (lo + hi) / 2, l = wrapAt(c, words, font, size, mid, tracking); if (l.length <= lines.length && l.every((x) => widthOf(c, font, size, x, tracking) <= mid + 0.5)) { lines = l; hi = mid; } else lo = mid; }
+      const stops = (l) => l.slice(0, -1).filter((x) => /[,.;:]$/.test(x)).length;
+      for (let k = 0; k <= 24; k++) {
+        const w = maxW * (1 - k * 0.022), l = wrapAt(c, words, font, size, w, tracking);
+        if (l.length === lines.length && stops(l) > stops(lines) && l.every((x) => widthOf(c, font, size, x, tracking) <= maxW + 0.5)) lines = l;
+      }
+    }
+    return { size, lines };
+  }
+  // one line whose words rise into place from behind a mask at the baseline, a word every `stagger`
+  function rise(c, text, x, y, font, size, t, t0, { colour, align = 'left', tracking = 0, stagger = 0.07, dur = 0.5, accent } = {}) {
+    const words = String(text).split(' ').filter(Boolean);
+    const space = widthOf(c, font, size, ' ', tracking), widths = words.map((w) => widthOf(c, font, size, w, tracking));
+    const total = widths.reduce((a, b) => a + b, 0) + space * Math.max(0, words.length - 1);
+    let wx = align === 'center' ? x - total / 2 : align === 'right' ? x - total : x;
+    words.forEach((w, i) => {
+      const p = (t - t0 - i * stagger) / dur;
+      if (p > 0) {
+        const e = ease('quint', p), dy = (1 - e) * size * 1.05;
+        c.save();
+        if (e < 1) { c.beginPath(); c.rect(wx - size, y - size * 1.3, widths[i] + 2 * size, size * 1.62); c.clip(); }
+        c.globalAlpha *= e;
+        setText(c, font, size, tracking); c.fillStyle = accent && accent(w, i) ? accent(w, i) : colour; c.fillText(w, wx, y + dy);
+        c.restore();
+      }
+      wx += widths[i] + space;
+    });
+    return total;
+  }
+
+  // ---------- KEEP: a feature's words: the version, the name, its line ----------
+  function titleBlock(f, box) {
+    const tag = V[f.words[0]] || '', name = V[f.words[1]] || '', line = V[f.words[2]] || '';
+    const nameFont = SANS(600), lineFont = SANS(500), tagFont = MONO(500);
+    const N = fitLines(g, name, nameFont, { maxSize: box.nameMax, minSize: 2.6 * U, maxW: box.w, maxLines: /\S{20}/.test(name) ? 3 : 2, tracking: -0.035 });
+    const ls = Math.min(box.lineSize, N.size / 1.6), L = fitLines(g, line, lineFont, { maxSize: ls, minSize: 2.4 * U, maxW: box.w, maxLines: 3, tracking: -0.01 });
+    const tagS = 3.4 * U, capN = capOf(nameFont, N.size), capL = capOf(lineFont, L.size), capT = capOf(tagFont, tagS);
+    let y = 0; const rows = [];
+    if (tag) { y += capT; rows.push({ kind: 'tag', text: tag, y, size: tagS }); y += tagS * 1.25; }
+    N.lines.forEach((l, i) => { y += i ? N.size * 1.0 : capN; rows.push({ kind: 'name', text: l, y, size: N.size, i }); });
+    y += N.size * 0.24;
+    L.lines.forEach((l, i) => { y += i ? L.size * 1.3 : capL + L.size * 0.7; rows.push({ kind: 'line', text: l, y, size: L.size, i }); });
+    y += L.size * 0.32;
+    return { rows, height: y };
+  }
+  function drawTitle(f, block, x, top, t) {
+    const at = f.t0 - LEAD;
+    for (const r of block.rows) {
+      if (r.kind === 'tag') {
+        // the version: an amber dot that lights, then the number rises beside it
+        const d = r.size * 0.36, cx = x + d / 2, cy = top + r.y - capOf(MONO(500), r.size) / 2, k = crit(t - at);
+        if (k > 0) { glowDot(cx, cy, d / 2 * k, 1); }
+        rise(g, r.text, x + d + r.size * 0.55, top + r.y, MONO(500), r.size, t, at, { colour: AMBER, tracking: 0.02 });
+      }
+      if (r.kind === 'name') rise(g, r.text, x, top + r.y, SANS(600), r.size, t, at + 0.08 + r.i * 0.1, { colour: TEXT, tracking: -0.035 });
+      if (r.kind === 'line') rise(g, r.text, x, top + r.y, SANS(500), r.size, t, at + BEAT * 0.75 + r.i * 0.08, { colour: MUTED, tracking: -0.01, stagger: 0.045, dur: 0.45 });
+    }
+  }
+  function glowDot(cx, cy, r, a) {
+    const gr = g.createRadialGradient(cx, cy, 0, cx, cy, r * 4);
+    gr.addColorStop(0, `rgba(${AMBER_RGB},${0.35 * a})`); gr.addColorStop(1, `rgba(${AMBER_RGB},0)`);
+    g.fillStyle = gr; g.fillRect(cx - r * 4, cy - r * 4, r * 8, r * 8);
+    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fillStyle = AMBER; g.fill();
+  }
+
+  // ---------- KEEP: the frame. Words on top (or left in wide); the product's windows take the rest ----------
+  function layoutFor(f) {
+    const side = 0.07 * W;
+    if (wide) {
+      const w = 0.33 * W, block = titleBlock(f, { w, nameMax: 13 * U, lineSize: 4.4 * U });
+      return { block, tx: 0.07 * W, ty: H / 2 - block.height / 2, area: [0.44 * W, 0.07 * H, 0.52 * W, 0.86 * H] };
+    }
+    // Square: a compact title (one line where it fits) so the product cards get most of the frame.
+    const block = titleBlock(f, { w: W - 2 * side, nameMax: (tall ? 10 : 6.4) * U, lineSize: (tall ? 4.6 : 3.6) * U });
+    const ty = (tall ? 0.10 : 0.05) * H, top = ty + block.height + (tall ? 4 : 3) * U, bottom = tall ? H * 0.88 : H - 7 * U, x = side; // square: the same 7% margin as the sides
+    return { block, tx: side, ty, area: [x, top, W - 2 * x, Math.max(20 * U, bottom - top)] };
+  }
+
+  // ---------- KEEP: fixed captured pixels; move the complete card ----------
+  // A crop is fixed for the life of a card. Only the card's outer transform moves.
+  // Source pixel scale never changes independently of the border/background/cursor target.
+  const TIMING = { open: 0, f1: 3.2, f2: 8.5, f3: 14.2, stat: 18.6, wipe: 22.2, end: 22.8, duration: 25.9 }; // the end card holds while the score's last hit rings out
+  let T, F1, F2, F3, FEATURES, DURATION;
+  function timeline() {
+    T=TIMING; BPM=120; BEAT=60/BPM; DURATION=T.duration;
+    F1={t0:T.f1,words:['tag1','name1','line1'],click:4.1,typeA:4.5,typeB:5.8};
+    F1.letters=t=>t<F1.typeA?0:t<F1.typeB?Math.min(13,Math.floor((t-F1.typeA)/0.09)+1):Math.min(20,14+Math.floor((t-F1.typeB)/0.085));
+    F2={t0:T.f2,words:['tag2','name2','line2'],click:9.8,queued:9.92,running:11.4,done:12.65,travel:10.35};
+    F3={t0:T.f3,words:['tag3','name3','line3'],click1:15.8,pop:15.92,flood:18.0};
+    FEATURES=[F1,F2,F3];
+  }
+  timeline();
+  const HANDOFF = 0.60, LEAD = 0.50;
+  const cardAt = (f, stagger = 0) => f.t0 - LEAD + stagger;
+  const crop = (id, set, shot, source, extra = {}) => ({ id, set, shot, source, ...extra });
+
+  function stack(area, cards) {
+    const [x,y,w,h] = area, gapMin = 2.6*U;
+    const widths = cards.map(c => Math.min(w, c.source[2] * (c.maxK || 3.45)));
+    const heights = cards.map((c,i) => widths[i] * c.source[3]/c.source[2]);
+    const sum = heights.reduce((a,b)=>a+b,0), k = Math.min(1,(h-gapMin*(cards.length-1))/sum);
+    const gap = cards.length > 1 ? (h-sum*k)/(cards.length-1) : 0;
+    let yy = cards.length === 1 ? y+(h-sum*k)/2 : y;
+    return cards.map((c,i) => { const cw=widths[i]*k, ch=heights[i]*k;
+      const out={...c,rect:[x+(w-cw)/2,yy,cw,ch]}; yy+=ch+gap; return out;
+    });
+  }
+  // The widest column of cards (height/width ratios joined by gaps) that fits the area:
+  // centred across it, top-aligned (centred vertically in wide, beside the words).
+  function column(area,ratios,gap) {
+    const [x,y,w,h]=area,sum=ratios.reduce((a,b)=>a+b,0),cw=Math.min(w,(h-gap*(ratios.length-1))/sum);
+    return { x:x+(w-cw)/2, y:wide?y+(h-cw*sum-gap*(ratios.length-1))/2:y, w:cw };
+  }
+  function cardPose(c,t) {
+    const [x,y,w,h]=c.rect, enter=M.settle(t-c.at,c.enterDur||0.55), grow=lerp(c.from??0.95,1,enter);
+    // One camera push per complete card, bounded inside the 7% safe margins.
+    const until=c.at<T.f2-LEAD?T.f2:c.at<T.f3-LEAD?T.f3:T.stat;
+    const push=M.inOut((t-c.at-0.7)/(until-c.at-0.7));
+    let scale=grow*lerp(0.985,1,push);
+    let cx=x+w/2, cy=y+h/2+(1-enter)*(c.rise??0.085)*H;
+    // A popover grows out of the control that opened it, not out of its own centre.
+    if(c.anchor){cx=c.anchor[0]+(cx-c.anchor[0])*grow;cy=c.anchor[1]+(cy-c.anchor[1])*grow;}
+    let a=M.out((t-c.at)/(c.fadeIn||0.12));
+    // A control that has done its job lifts a little and fades where it stands.
+    if(c.exitAt!==undefined){const e=M.inOut((t-c.exitAt)/0.25);a*=1-e;cy-=e*0.015*H;scale*=lerp(1,0.97,e);}
+    return { cx,cy,w:w*scale,h:h*scale,scale,a };
+  }
+  function cardPoint(c,t,p) {
+    const m=cardPose(c,t), [sx,sy,sw,sh]=c.source;
+    return { x:m.cx-m.w/2+(p[0]-sx)*m.w/sw, y:m.cy-m.h/2+(p[1]-sy)*m.h/sh };
+  }
+  function paintCard(c,t) {
+    const m=cardPose(c,t); if(m.a<=0) return;
+    const [sx,sy,sw,sh]=c.source;
+    g.save();g.globalAlpha=m.a;g.translate(m.cx,m.cy);g.scale(m.scale,m.scale);
+    const [,,w,h]=c.rect,r=c.radius ? c.radius*w/sw : Math.min(2.6*U,h/4);
+    g.save();roundRect(g,-w/2,-h/2,w,h,r);g.fillStyle=INK;g.shadowColor='rgba(0,0,0,0.5)';g.shadowBlur=5*U;g.shadowOffsetY=2*U;g.fill();g.restore();
+    g.save();roundRect(g,-w/2,-h/2,w,h,r);g.clip();g.imageSmoothingQuality='high';
+    const pixels=(shot,source=c.source)=>{
+      const a=cap(shot,c.set),[px,py,pw,ph]=source,k=a.scale;
+      g.drawImage(a.img,(px-a.rect[0])*k,(py-a.rect[1])*k,pw*k,ph*k,-w/2,-h/2,w,h);
+    };
+    // A card's changes happen inside its own elements (nativePixels); no drawn replacement UI.
+    if(c.native) nativePixels(c,t,w,h); else pixels(c.shot);
+    g.restore();roundRect(g,-w/2+0.75,-h/2+0.75,w-1.5,h-1.5,r);g.lineWidth=1.5;g.strokeStyle='rgba(236,234,227,0.11)';g.stroke();g.restore();
+  }
+  // Native pixels only. Every event owns an element-sized viewport; the
+  // heading, border, neighbouring labels and row rules remain the base capture.
+  function nativePixels(c,t,w,h) {
+    const [sx,sy,sw,sh]=c.source,kx=w/sw,ky=h/sh;
+    const draw=(shot,source,rect,dy=0,set=c.set)=>{
+      const a=cap(shot,set),[x,y,rw,rh]=rect,[ox,oy]=source;
+      g.drawImage(a.img,(ox+x-a.rect[0])*a.scale,(oy+y-a.rect[1])*a.scale,rw*a.scale,rh*a.scale,
+        -w/2+x*kx,-h/2+(y+dy)*ky,rw*kx,rh*ky);
+    };
+    draw(c.native.base,c.native.source||c.source,[0,0,sw,sh]);
+    for(const e of c.native.events) {
+      if(t<=e.at)continue;
+      const p=M.out((t-e.at)/(e.dur||0.35)),[x,y,rw,rh]=e.rect;
+      g.save();g.beginPath();g.rect(-w/2+x*kx,-h/2+y*ky,rw*kx,rh*ky);g.clip();
+      if(e.kind==='roll'&&p<1) {
+        draw(e.before,e.beforeSource||c.source,e.rect,-p*rh);
+        draw(e.shot,e.source||c.source,e.rect,(1-p)*rh,e.set||c.set);
+      } else if(e.kind==='radial'&&p<1) {
+        const [cx,cy]=e.center||[x+rw/2,y+rh/2];
+        g.beginPath();g.arc(-w/2+cx*kx,-h/2+cy*ky,Math.hypot(rw*kx,rh*ky)/2*p,0,Math.PI*2);g.clip();
+        draw(e.shot,e.source||c.source,e.rect,0,e.set||c.set);
+      } else if(e.kind==='focus'&&p<1) {
+        g.globalAlpha*=p;draw(e.shot,e.source||c.source,e.rect,0,e.set||c.set);
+      } else if(p<1) {
+        g.beginPath();g.rect(-w/2+x*kx,-h/2+y*ky,rw*kx,rh*ky*p);g.clip();draw(e.shot,e.source||c.source,e.rect,0,e.set||c.set);
+      } else draw(e.shot,e.source||c.source,e.rect,0,e.set||c.set);
+      g.restore();
+    }
+  }
+  function scheduleCards(area,t) {
+    const understood=F1.typeA+12*0.09,final=F1.typeB+6*0.085;
+    const sourceNext=[694,317,352,222],blankNext=sourceNext; // ends in the panel's own padding below row 5
+    const fieldEvents=[{at:F1.click,shot:'sched-00',rect:[11,9,424.55,50],kind:'focus',dur:.12}];
+    for(let i=1;i<=20;i++)fieldEvents.push({at:i<=13?F1.typeA+(i-1)*.09:F1.typeB+(i-14)*.085,
+      shot:`sched-${String(i).padStart(2,'0')}`,rect:[51,13,278,42],dur:1/FPS});
+    // the badge's patch takes in its tick (from x 330), not just the word
+    fieldEvents.push({at:understood,shot:'sched-13',rect:[326,18,109,28],dur:.30});
+    const cronEvents=Array.from({length:5},(_,i)=>({at:understood+.04*i,shot:'sched-13',before:'sched-12',rect:[12.55+50*i,11,i===4?48.7:44,40],kind:'roll',dur:.35}));
+    // the copy button's patch takes in the whole icon (x 324-336, y 26-38)
+    cronEvents.push({at:understood+.2,shot:'sched-13',rect:[318,18,45,28],dur:.25},
+      {at:final,shot:'sched-20',before:'sched-13',rect:[62.55,11,44,40],kind:'roll',dur:.40});
+    const nextEvents=[];
+    for(let i=0;i<5;i++) {
+      const rect=[42,31+34*i,301,32];
+      nextEvents.push({at:understood+.06*i,shot:'sched-13',before:'sched-12',beforeSource:blankNext,rect,kind:'roll',dur:.35});
+      // The app uses proportional date labels, so each time has its own box.
+      // Keep even the last letter of "Oct" fixed; don't roll the whole row.
+      nextEvents.push({at:final+.10*i,shot:'sched-20',before:'sched-13',rect:[[132,123,136,130,137][i],31+34*i,43,32],kind:'roll',dur:.45});
+      if(i===0)nextEvents.push({at:final,shot:'sched-20',before:'sched-13',rect:[263,31,80,32],kind:'roll',dur:.45});
+    }
+    return stack(area,[
+      crop('field','screens-narrow','sched-idle',[230,224,448,70],{maxK:5.75,at:cardAt(F1),uiSize:18,native:{base:'sched-idle',events:fieldEvents}}),
+      crop('cron','screens-narrow','sched-12',[694,194,365,78],{maxK:5.75,at:cardAt(F1,.1),uiSize:17,native:{base:'sched-12',events:cronEvents}}),
+      crop('next','screens-narrow','sched-12',sourceNext,{maxK:5.75,at:cardAt(F1,.2),uiSize:13.5,native:{base:'sched-12',source:blankNext,events:nextEvents}})
+    ]);
+  }
+  function replayDetail(t) {
+    // The panel down to its first divider: the card ends in the panel's own padding, at full width.
+    const source=[1112,236,304,187],failed=[1112,184,304,187],events=[];
+    const row=(at,shot,before,rect,extra={})=>events.push({at,shot,before,rect,kind:'roll',dur:.35,...extra});
+    const status=(at,shot,before,extra={})=>{
+      row(at,shot,before,[131,60,26,28],{...extra,kind:'radial',center:[145,74]});
+      row(at,shot,before,[157,60,140,28],extra);
+    };
+    status(F2.queued,'queued','failed',{beforeSource:failed});
+    [[14,120,105,28],[121,120,176,28],[14,150,105,28],[121,150,176,28]].forEach((rect,i)=>
+      row(F2.queued+.05+i*.045,'queued','failed',rect,{beforeSource:failed}));
+    status(F2.running,'running','queued',{dur:.25});
+    status(F2.done,'succeeded','running',{dur:.25});
+    return crop('detail','details','failed',source,{at:cardAt(F2,.1),native:{base:'failed',source:failed,events}});
+  }
+  let cursorG=null;
+  function clickBounds(c,t,r) {
+    const a=cardPoint(c,t,[r[0],r[1]]),b=cardPoint(c,t,[r[0]+r[2],r[1]+r[3]]);
+    return [a.x,a.y,b.x-a.x,b.y-a.y,6*cardPose(c,t).w/c.source[2]];
+  }
+  function houseCursor(options,bounds) {
+    const hits=options.press||[],ripple=hits.some(at=>options.t>=at&&options.t<at+0.35);
+    if(!bounds||!ripple) return M.drawCursor(g,options);
+    if(!cursorG||cursorG.canvas.width!==W||cursorG.canvas.height!==H)cursorG=g2d(W,H);
+    cursorG.reset();
+    M.drawCursor(cursorG,{...options,theme:{...options.theme,fill:'transparent',stroke:'transparent'}});
+    g.save();roundRect(g,...bounds);g.clip();g.drawImage(cursorG.canvas,0,0);g.restore();
+    return M.drawCursor(g,{...options,theme:{...options.theme,accent:'transparent'}});
+  }
+  function cursor(c,t,point,at,arrive,exit,press,bounds) {
+    const target=cardPoint(c,t,point);
+    // Targets use the same card transform; entry and exit are house curved paths.
+    return houseCursor({t,path:[
+      {at,from:{x:W+0.06*W,y:target.y+0.15*H},to:target,dur:arrive-at},
+      {at:exit,exit:true,to:{x:W+0.08*W,y:target.y+0.1*H},dur:0.25}
+    ],press,theme:{accent:AMBER,seed:17}},bounds?clickBounds(c,t,bounds):null);
+  }
+  function featureCards(f,area,t) {
+    if(f===F1) {
+      return scheduleCards(area,t);
+    }
+    if(f===F2) {
+      // The button stays where it was pressed, then gives its place to the two kept steps.
+      // The Details card never moves: only its values change.
+      const button=crop('button','controls','replay-idle',[1173.38,96,206.63,48],{at:cardAt(F2),maxK:5.75,exitAt:F2.travel,
+        native:{base:'replay-idle',events:[{at:F2.click,shot:'replay-held-01',rect:[4,8,198.63,32],kind:'focus',dur:1/FPS},{at:F2.click+.06,shot:'replay-idle',rect:[4,8,198.63,32],kind:'focus',dur:.12}]}});
+      // One column, top-aligned (centred in wide) with one normal gap; any room left stays at the foot.
+      const {x,y,w}=column(area,[48/206.63,187/304],2.6*U),buttonH=48*w/206.63,b={...button,rect:[x,y,w,buttonH]},dd=replayDetail(t),d={...dd,rect:[x,y+buttonH+2.6*U,w,dd.source[3]*w/dd.source[2]]};
+      // Both badges at one scale, the longer one as wide as Details, spaced as in the app.
+      const k=d.rect[2]/351.16,bh=26*k,step=42*k,top=b.rect[1]+(b.rect[3]-step-bh)/2;
+      const kept=['kept-first','kept-second'].map((id,i)=>{const r=cap(id,'controls').rect;
+        return crop(id,'controls',id,r,{at:F2.travel+0.26+i*0.1,radius:13,rise:0.02,enterDur:0.45,rect:[d.rect[0],top+i*step,r[2]*k,bh]});});
+      return [...(t<F2.travel+0.3?[b]:[]),...kept,d];
+    }
+    {
+      // One timeline. Pressing the running bar selects it (the app's own white ring) and opens
+      // its popover just under it, over the lanes, as the app does. Nothing slides.
+      // barBox: every pixel where the selected bar differs from the idle one, its rounded
+      // ring and the idle bar's whole glow, measured in the captures; it stops just above
+      // the popover's pointer. A smaller box clipped the ring square and left glow outside it.
+      const barBox=[189,49,70,28.5];
+      const {x,y,w}=column(area,[(253-180+8)/304+255/320],0),k=w/304,ck=w/320,top=y+(253-180+8)*k;
+      const timeline=crop('timeline','screens','runs',[1092,180,304,219],{at:cardAt(F3),rect:[x,y,w,219*k],native:{base:'runs',events:[
+        {at:F3.click1,shot:'bar-pressed-01',set:'fanout-pressed',rect:barBox,kind:'focus',dur:1/FPS},
+        {at:F3.click1+.06,shot:'callout',rect:barBox,kind:'focus',dur:.12}]}});
+      const callout=crop('callout','screens','callout',[1037.13,270,320,255],{at:F3.pop,from:0.94,rise:0,enterDur:0.35,fadeIn:0.15,
+        anchor:[x+(1320-1092)*k,top],rect:[x,top,w,255*ck]});
+      return [timeline,callout];
+    }
+  }
+  function ground() { g.fillStyle=NIGHT;g.fillRect(0,0,W,H); }
+  const floodCard=(cards)=>cards.find(c=>c.id==='timeline');
+  function fieldBounds(t,c) {
+    // Begin inside the amber of the real running bar. The same square rectangle widens,
+    // then opens vertically. No rounded corner, circle, or separate seed.
+    const [p0,p1]=[[1304,241],[1336,251]];
+    const a=cardPoint(c,F3.flood,p0),b=cardPoint(c,F3.flood,p1);
+    const dt=t-F3.flood,px=M.out(dt/0.24),py=M.inOut((dt-0.10)/0.50);
+    const x=lerp(a.x,0,px),y=lerp(a.y,0,py);
+    return [x,y,lerp(b.x,W,px)-x,lerp(b.y,H,py)-y];
+  }
+  function feature(t,f) {
+    const L=layoutFor(f);ground();drawTitle(f,L.block,L.tx,L.ty,t);
+    const cards=featureCards(f,L.area,t);cards.forEach(c=>paintCard(c,t));
+    if(f===F1) cursor(cards[0],t,[510,260],F1.click-0.75,F1.click-0.08,F1.typeA,[F1.click],[241,233,424.55,50]);
+    if(f===F2&&t<F2.queued+0.32) {
+      const c=cards.find(c=>c.id==='button');
+      if(c) cursor(c,t,[1270,120],F2.click-0.75,F2.click-0.08,F2.queued,[F2.click],[1177.38,104,198.63,32]);
+    }
+    if(f===F3) {
+      const c=cards.find(c=>c.id==='timeline'),p1=cardPoint(c,F3.click1,[1320,246]);
+      houseCursor({t,path:[
+        {at:F3.click1-0.75,from:{x:W+0.08*W,y:p1.y+0.25*H},to:p1,dur:0.67},
+        {at:F3.pop+0.3,exit:true,to:{x:W+0.08*W,y:p1.y-0.04*H},dur:0.3}
+      ],press:[F3.click1],theme:{accent:AMBER,seed:17}},clickBounds(c,F3.click1,[1300.95,239,38.16,14]));
+      if(t>=F3.flood){g.save();g.beginPath();g.rect(...fieldBounds(t,floodCard(cards)));g.clip();statPaint(t);g.restore();}
+    }
+  }
+
+  // ---------- KEEP: generic dot → container → supplied mark → lockup ----------
+  function brand(t,at,cy,line,{lockAt=at+0.75,hold=1.2,pushAt=lockAt+0.5}={}) {
+    const size=16*U,font=SANS(600)(12.5*U),lineSize=Math.min(4.9*U,0.86*W/1.044/Math.max(1,widthOf(g,SANS(500),100,line))*100);
+    g.letterSpacing='0px';
+    const outer=1+0.026*M.inOut((t-pushAt)/hold);
+    g.save();g.translate(W/2,cy);g.scale(outer,outer);g.translate(-W/2,-cy);
+    const state=M.markReveal(g,{t,at,cx:W/2,cy,size,shape:'squircle',bg:{from:INK,to:INK},fg:TEXT,
+      drawMark:(c,{size})=>c.drawImage(A.brand.mark,-size*0.4,-size*0.4,size*0.8,size*0.8),
+      lockup:{text:'lamplit',font,color:TEXT,gap:3*U,line,lineFont:SANS(500)(lineSize),lineColor:MUTED,at:lockAt,dur:0.5,hold}});
+    g.restore();return {...state,push:state.push*outer};
+  }
+  function open(t) {
+    ground();const cy=H*0.42;
+    // The open starts with a legible, already-growing tile, never an isolated dot.
+    const B=brand(t,-.25,cy,V.category,{lockAt:.45,pushAt:1.6});
+    g.save();g.translate(W/2,cy);g.scale(B.push,B.push);g.translate(-W/2,-cy);
+    const O=fitLines(g,V.open,SANS(500),{maxSize:5.3*U,minSize:2.6*U,maxW:0.86*W/1.044,maxLines:2,tracking:-0.01});
+    O.lines.forEach((l,i)=>rise(g,l,W/2,cy+24*U+i*O.size*1.24,SANS(500),O.size,t,1.0+i*.08,{colour:MUTED,align:'center',tracking:-0.01,stagger:0.04,accent:w=>/\d/.test(w)?AMBER:null}));
+    g.restore();
+  }
+
+  // ---- the stat, on the amber flood: one number counts up; two lines say what it proves ----
+  function parseStat(s) {
+    const m = String(s).match(/^([^\d]*)(\d[\d,]*(?:\.\d+)?)(.*)$/);
+    if (!m) return null;
+    const num = m[2].replace(/,/g, ''), dec = (num.split('.')[1] || '').length;
+    return { pre: m[1], value: Number(num), dec, commas: m[2].includes(','), post: m[3] };
+  }
+  const fmt = (S, v) => { let s = v.toFixed(S.dec); if (S.commas) { const [i, d] = s.split('.'); s = i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (d ? '.' + d : ''); } return S.pre + s + S.post; };
+  const COUNT = 1.1;
+  const countAt = (t, t0) => (t <= t0 ? 0 : ease('expo', (t - t0) / COUNT));
+  function statPaint(t, { source = true } = {}) {
+    g.fillStyle = AMBER; g.fillRect(0, 0, W, H);
+    g.save(); const pz = lerp(1, 1.04, M.inOut((t - T.stat) / (T.wipe - T.stat))); g.translate(W / 2, H * 0.45); g.scale(pz, pz); g.translate(-W / 2, -H * 0.45); // the hold keeps breathing
+    const t0 = T.stat - .13, S = parseStat(V.stat), font = SANS(600), ink = INK;
+    const text = S ? fmt(S, S.value) : V.stat;
+    const slotsAt = (sz) => [...text].map((ch) => widthOf(g, font, sz, ch, -0.035));
+    const size = Math.min((tall ? 29 : 26) * U, 0.8 * W / slotsAt(100).reduce((a, b) => a + b, 0) * 100);
+    const slots = slotsAt(size), total = slots.reduce((a, b) => a + b, 0);
+    const shown = S ? fmt(S, S.value * countAt(t, t0)) : text;
+    const base = H * (tall ? 0.47 : 0.45) + capOf(font, size) / 2;
+    const ends = []; let acc = W / 2 - total / 2; for (const w of slots) { acc += w; ends.push(acc); }
+    // Before its rise the number is wholly below its own mask: don't draw it at all.
+    if (t >= t0) { g.save(); g.beginPath(); g.rect(0, base - size * 1.1, W, size * 1.38); g.clip();
+    g.translate(0, (1 - ease('quint', (t - t0) / 0.5)) * size * 1.0);
+    setText(g, font, size, -0.035); g.fillStyle = ink;
+    const chars = [...shown], off = slots.length - chars.length;
+    chars.forEach((ch, i) => { const j = i + off; if (j < 0) return; const cw = widthOf(g, font, size, ch, -0.035); setText(g, font, size, -0.035); g.fillText(ch, ends[j] - slots[j] / 2 - cw / 2, base); });
+    g.restore(); }
+    if (V.statPre) { const pre = fitLines(g, V.statPre, SANS(600), { maxSize: (tall ? 6.2 : 4.8) * U, minSize: 2.6 * U, maxW: 0.86 * W, maxLines: 1, tracking: -0.015 });
+      pre.lines.forEach((l) => rise(g, l, W / 2, base - capOf(font, size) - size * 0.2, SANS(600), pre.size, t, T.stat - .16, { colour: ink, align: 'center', tracking: -0.015, stagger: 0.05 })); }
+    const l1 = fitLines(g, V.stat1, SANS(600), { maxSize: (tall ? 6.2 : 4.8) * U, minSize: 2.6 * U, maxW: 0.86 * W, maxLines: 2, tracking: -0.015 });
+    let y = base + size * 0.24 + l1.size * 1.15;
+    l1.lines.forEach((l, i) => rise(g, l, W / 2, y + i * l1.size * 1.22, SANS(600), l1.size, t, T.stat + BEAT * 1.2 + i * 0.08, { colour: ink, align: 'center', tracking: -0.015, stagger: 0.05 }));
+    y += (l1.lines.length - 1) * l1.size * 1.22 + l1.size * 1.3;
+    const l2 = fitLines(g, V.stat2, SANS(500), { maxSize: (tall ? 5.4 : 4.4) * U, minSize: 2.6 * U, maxW: 0.86 * W, maxLines: 2, tracking: -0.01 });
+    l2.lines.forEach((l, i) => rise(g, l, W / 2, y + i * l2.size * 1.25, SANS(500), l2.size, t, T.stat + BEAT * 2.2 + i * 0.08, { colour: 'rgba(14,18,32,0.72)', align: 'center', tracking: -0.01, stagger: 0.05 }));
+    if (!source) { g.restore(); return; }
+    const src = fitLines(g, V.statSource, MONO(500), { maxSize: 3.3 * U, minSize: 2.4 * U, maxW: 0.84 * W, maxLines: 2 });
+    const sy = H * 0.88;
+    src.lines.forEach((l, i) => rise(g, l, W / 2, sy + i * src.size * 1.3, MONO(500), src.size, t, T.stat + BEAT * 3.2 + i * 0.08, { colour: 'rgba(14,18,32,0.62)', align: 'center', stagger: 0.04 }));
+    g.restore();
+  }
+  function stat(t) { statPaint(t); }
+
+  // The end identity grows behind the outgoing stat's straight edge.
+  function endScene(t) {
+    ground();const cy=H*0.40;
+    const B=brand(t,T.wipe-.2,cy,V.promise,{lockAt:T.end+.1,pushAt:T.end+1});
+    const gt=T.end+.6;
+    if(t>=gt&&V.get) {
+      const label='$ '+V.get,pad=3.2*U,ms=Math.min(4.6*U,(0.86*W/1.044-2*pad)/widthOf(g,MONO(500),100,label)*100);
+      // Measure the entire visible command, including the prompt and inter-word spaces.
+      const tw=widthOf(g,MONO(500),ms,label),bw=tw+2*pad,bh=2.5*ms;
+      const p=M.settle(t-gt,0.5),cyP=cy+30*U+(1-p)*3*U;
+      const push=B.push;g.save();g.translate(W/2,cy);g.scale(push,push);g.translate(-W/2,-cy);g.globalAlpha=M.out((t-gt)/0.12);
+      roundRect(g,(W-bw)/2,cyP-bh/2,bw,bh,bh/2);g.fillStyle='#151A2B';g.fill();g.lineWidth=1.5;g.strokeStyle=LINE;g.stroke();
+      setText(g,MONO(500),ms);g.fillStyle=AMBER;const x=(W-tw)/2;g.fillText('$',x,cyP+capOf(MONO(500),ms)/2);
+      const prompt=widthOf(g,MONO(500),ms,'$ ');
+      rise(g,V.get,x+prompt,cyP+capOf(MONO(500),ms)/2,MONO(500),ms,t,gt+0.03,{colour:TEXT,stagger:0.025,dur:0.35});g.restore();
+    }
+  }
+  function end(t) {
+    if(t<T.end) {
+      statPaint(t);const p=M.inOut((t-T.wipe)/(T.end-T.wipe));
+      g.save();g.beginPath();g.rect(0,H*(1-p),W,H*p);g.clip();endScene(t);g.restore();
+    } else endScene(t);
+  }
+
+  const acts = () => [[T.open, open], ...FEATURES.map((f) => [f.t0, (t) => feature(t, f)]), [T.stat, stat], [T.wipe, end]];
+  const handoffs = () => [
+    [F1.t0, open, t=>feature(t,F1)],
+    [F2.t0, t=>feature(t,F1), t=>feature(t,F2)],
+    [F3.t0, t=>feature(t,F2), t=>feature(t,F3)],
+  ];
+  function overlap(t,boundary,before,after) {
+    const p=M.inOut((t-boundary+HANDOFF/2)/HANDOFF);
+    for(const [x,draw] of [[-p*W,before],[(1-p)*W,after]]) {
+      g.save();g.translate(x,0);g.beginPath();g.rect(0,0,W,H);g.clip();draw(t);g.restore();
+    }
+  }
+
+  // ---------- KEEP: drawing, loading; ADAPT: the cues and the score ----------
+  function seek(t, values) {
+    V = { ...DEFAULTS, ...values };
+    shape = SHAPES[V.size] ? V.size : '9:16'; [W, H] = SHAPES[shape]; U = Math.min(W, H) / 100; tall = H > W; wide = W > H;
+    timeline();
+    if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+    g.reset();
+    t = clamp(t, 0, DURATION - 1e-6);
+    const handoff=handoffs().find(([beat])=>t>=beat-HANDOFF/2 && t<beat+HANDOFF/2);
+    if(handoff) { overlap(t,...handoff);return canvas; }
+    const ACTS=acts();let act = ACTS[0][1];
+    for (const [t0, draw] of ACTS) if (t >= t0 - 1e-9) act = draw;
+    act(t);
+    return canvas;
+  }
+  async function prepare() {
+    await Promise.all([
+      loadFont('Instrument Sans', 'assets/fonts/instrument-sans-variable.ttf', { weight: '400 700', stretch: '75% 100%' }),
+      loadFont('JetBrains Mono', 'assets/fonts/jetbrains-mono-variable.ttf', { weight: '100 800' }),
+    ]);
+    for (const set of SETS) A.sets[set] = await (await fetch(`assets/${set}/screens.json`)).json();
+    await Promise.all(SETS.flatMap((set) => Object.values(A.sets[set].captures).map(async (c) => { A.img[`${set}/${c.file}`] = await loadImage(`assets/${set}/${c.file}`); })));
+    A.brand.mark = await loadImage('assets/brand/mark.svg');
+    await document.fonts.ready;
+  }
+
+  // Cues are attached to named visual onsets, with no pre-roll or unrelated tones.
+  function cues(values) {
+    timeline();
+    const out=[],add=(t,type,gain,action,motion)=>out.push({t:+t.toFixed(6),type,gain,lead:0,action,...(motion?{motion}:{})});
+    add(0,'pop',.4,'opening tile already growing');
+    add(.45,'pop',.4,'opening lockup starts');
+    FEATURES.forEach(f=>add(f.t0-HANDOFF/2,'swish',.35,'scene push: '+f.words[1],{kind:'container',travel:1}));
+    add(F1.click,'click',.65,'schedule field press');
+    for(let i=1;i<=20;i++)add(i<=13?F1.typeA+(i-1)*.09:F1.typeB+(i-14)*.085,'tick',.6,'typed character '+i);
+    add(F2.click,'click',.65,'replay button press');
+    add(F2.queued,'pop',.4,'queued status starts');
+    add(F2.travel+.26,'pop',.4,'first kept step arrives');
+    add(F2.running,'pop',.4,'running status starts');
+    add(F2.done,'pop',.45,'succeeded status starts');
+    add(F3.click1,'click',.65,'fan-out row press');
+    add(F3.pop,'pop',.4,'run popover opens');
+    add(F3.flood,'whoosh',.35,'amber bar expands',{kind:'container',travel:1});
+    [-.13,.07,.32].forEach((dt,i)=>add(T.stat+dt,'pop',.4+i*.025,'capacity count step '+(i+1)));
+    add(T.wipe,'swish',.35,'closing edge starts',{kind:'container',travel:1});
+    add(T.end+.1,'pop',.4,'closing lockup starts');
+    add(T.end+.6,'pop',.4,'update command enters');
+    return out.sort((a,b)=>a.t-b.t);
+  }
+  const music = {
+    bpm:120,duration:TIMING.duration,root:50,
+    chords:[[0,4,7],[7,11,14],[9,12,16],[5,9,12]],
+    sections:[
+      {from:0,to:1,pad:.65,hats:.5,clap:.3},
+      {from:1,to:4,kick:.8,hats:.65,clap:.5,bass:.55,pad:.55},
+      {from:4,to:7,kick:.85,hats:.75,clap:.6,bass:.6,pad:.6},
+      {from:7,to:10,kick:.9,hats:.8,clap:.65,bass:.6,pad:.65},
+      {from:10,to:12,kick:.75,hats:.65,clap:.45,bass:.5,pad:.65},
+      {from:12,to:14,kick:.6,hats:.5,clap:.35,bass:.4,pad:.75},
+    ],
+    breaks:[[18.35,18.6],[22.0,22.2]],
+  };
+  window.template = {
+    fps: FPS, get duration() { return DURATION; }, sizes: SHAPES, width: W, height: H, defaults: () => ({ size: '9:16', ...DEFAULTS }), fields: FIELDS, get states() { return [[0,'Open'],[T.f1,'Schedules'],[T.f2,'Replay'],[T.f3,'Fan-out'],[T.stat,'Stat'],[T.wipe,'End']]; },
+    prepare, seek: (t, values) => seek(t, values), cues, music,
+    audit: (t) => { const f=FEATURES.find((f,i)=>t>=f.t0&&t<(FEATURES[i+1]?.t0||T.stat));
+      return f ? featureCards(f,layoutFor(f).area,t).map(c=>({id:c.id,at:c.at,source:c.source,rect:c.rect,pose:cardPose(c,t),uiPx:(c.uiSize||13)*cardPose(c,t).w/c.source[2]})) : []; },
+    get timing() { return { ...T, schedule: F1, replay: F2, fanout: F3 }; },
+    fieldAudit: (t) => {const c=floodCard(featureCards(F3,layoutFor(F3).area,F3.flood));return {rect:fieldBounds(t,c),radius:0};},
+    cuts: [T.stat],
+    // The count changes digits every frame: no shutter there, so no ghosted digits.
+    get shutters() { return [[T.stat - 0.2, T.stat + COUNT + 0.1, 0]]; },
+    // Stress the push starts, midpoints and landings. Continuous strips cover
+    // the travelling edges, where clipping outgoing words is intentional.
+    keyTimes: [0,.12,.25,.45,.6,.95,1.7,2.7,2.9,3.2,3.5,4.1,4.5,5.58,5.9,6.31,6.8,7.2,8.1,8.2,8.5,8.8,9.8,9.92,10.35,10.5,10.8,11.4,11.85,12.65,12.9,13.8,13.9,14.2,14.5,15.8,15.92,16.1,16.4,17.5,17.95,18.1,18.3,18.6,19.75,20.4,21.1,22.1,22.2,22.4,22.6,22.8,22.9,23.4,23.8,24.2,25.88],
+  };
+  const q = new URLSearchParams(location.search);
+  if (q.has('render') || window.parent !== window) document.getElementById('credit').hidden = true;
+  if (window.parent === window && !q.has('render')) prepare().then(() => { const t0 = performance.now(); const loop = () => { seek(((performance.now() - t0) / 1000) % DURATION, { size: q.get('size') || '9:16' }); requestAnimationFrame(loop); }; loop(); });
+})();
+</script>

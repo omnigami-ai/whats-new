@@ -1,0 +1,322 @@
+{
+ "url": "http://127.0.0.1:4431/lamplit/app/#/schedules",
+ "viewport": [
+  1080,
+  1080
+ ],
+ "captures": {
+  "sched-idle": {
+   "file": "sched-idle@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-00": {
+   "file": "sched-00@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-01": {
+   "file": "sched-01@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-02": {
+   "file": "sched-02@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-03": {
+   "file": "sched-03@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-04": {
+   "file": "sched-04@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-05": {
+   "file": "sched-05@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-06": {
+   "file": "sched-06@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-07": {
+   "file": "sched-07@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-08": {
+   "file": "sched-08@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-09": {
+   "file": "sched-09@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-10": {
+   "file": "sched-10@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-11": {
+   "file": "sched-11@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-12": {
+   "file": "sched-12@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    450
+   ]
+  },
+  "sched-13": {
+   "file": "sched-13@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    454
+   ]
+  },
+  "sched-14": {
+   "file": "sched-14@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    454
+   ]
+  },
+  "sched-15": {
+   "file": "sched-15@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    454
+   ]
+  },
+  "sched-16": {
+   "file": "sched-16@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    454
+   ]
+  },
+  "sched-17": {
+   "file": "sched-17@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    454
+   ]
+  },
+  "sched-18": {
+   "file": "sched-18@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    454
+   ]
+  },
+  "sched-19": {
+   "file": "sched-19@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    454
+   ]
+  },
+  "sched-20": {
+   "file": "sched-20@5.webp",
+   "scale": 5,
+   "rect": [
+    220,
+    136,
+    840,
+    454
+   ]
+  }
+ },
+ "rects": {
+  "schedule": {
+   "page": [
+    0,
+    0,
+    1080,
+    1080
+   ],
+   "newSchedule": [
+    220,
+    136,
+    840,
+    450
+   ],
+   "scheduleField": [
+    241,
+    233,
+    424.55,
+    50
+   ],
+   "scheduleResult": [
+    686.55,
+    185,
+    372.45,
+    400
+   ],
+   "cron": [
+    706.55,
+    205,
+    244,
+    40
+   ],
+   "nextRuns": [
+    706.55,
+    367,
+    332.45,
+    172
+   ],
+   "scheduleSummary": [
+    241,
+    457,
+    424.55,
+    66
+   ]
+  },
+  "typed": {
+   "page": [
+    0,
+    0,
+    1080,
+    1080
+   ],
+   "newSchedule": [
+    220,
+    136,
+    840,
+    454
+   ],
+   "scheduleField": [
+    241,
+    233,
+    424.55,
+    50
+   ],
+   "scheduleResult": [
+    686.55,
+    185,
+    372.45,
+    404
+   ],
+   "cron": [
+    706.55,
+    205,
+    248.69,
+    40
+   ],
+   "nextRuns": [
+    706.55,
+    347,
+    332.45,
+    172
+   ],
+   "scheduleSummary": [
+    241,
+    457,
+    424.55,
+    70
+   ]
+  }
+ },
+ "typed": {
+  "sched": "every weekday at 9am"
+ }
+}
