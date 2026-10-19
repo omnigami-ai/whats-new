@@ -1,5 +1,6 @@
 {
   "name": "omnigami-whats-new",
+  "displayName": "omnigami What’s new",
   "version": "1.0.0",
   "description": ">-",
   "author": {
@@ -8,6 +9,10 @@
   },
   "homepage": "https://omnigami.ai/skills/whats-new",
   "repository": "https://github.com/omnigami-ai/whats-new",
+  "documentationUrl": "https://github.com/omnigami-ai/whats-new#readme",
+  "supportUrl": "https://omnigami.ai/#questions",
+  "privacyPolicyUrl": "https://omnigami.ai/legal/privacy",
+  "termsOfServiceUrl": "https://omnigami.ai/legal/terms",
   "license": "SEE LICENSE IN LICENSE.md",
   "keywords": [
     "video",
