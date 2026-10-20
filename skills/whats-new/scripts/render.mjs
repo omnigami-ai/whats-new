@@ -23,7 +23,8 @@
 //                            --ending 51.6 splices into the song's own ending there instead; a song
 //                            within 10% of the film's BPM is time-stretched to it (--keep-tempo: not);
 //                            once it lands, the film's result sounds (pop, ping, sparkle, chime) are left out;
-//                            --bpm 121.05 and --downbeat 0.02 override what it measures
+//                            --bpm 121.05 and --downbeat 0.02 override what it measures; --land 34 lands the
+//                            hit on the bar line nearest 34 s in the film (the film's own last hit)
 //     --poster 12.8          a PNG of one frame, for thumbnails
 //                            (a film can set a delivery spec per size, template.encode, e.g. for an App
 //                            Store preview: { '886:1920': { bitrate: '11M', minrate: '11M', maxrate: '11M',
@@ -46,7 +47,7 @@ import path from 'node:path';
 import puppeteer from 'puppeteer-core';
 import { requireChrome, chromeArgs } from './chrome.mjs';
 import { effects } from './sfx.mjs';
-import { compose, wav as toWav } from './music.mjs';
+import { compose, wav as toWav, LUFS as MUSIC_LUFS } from './music.mjs';
 import { fitSong } from './song.mjs';
 
 // the sounds that say "it arrived": after a fitted song lands they're left out (see --audio)
@@ -176,8 +177,12 @@ try {
       if (song && flag('music')) console.log('--audio replaces --music: the film\'s own score is left out');
       if (flag('music') && meta.music && !song) {
         const file = path.join(outDir, `${name}-music.wav`);
-        await writeFile(file, toWav(compose({ ...meta.music, duration: meta.duration })));
-        tracks.push([file, 1]);
+        // the film's name seeds its song (key, progressions, motif, patterns, palette) unless it sets music.seed
+        const film = path.basename(dir) === 'reference' ? path.basename(path.dirname(dir)) : path.basename(dir);
+        await writeFile(file, toWav(compose({ film, ...meta.music, duration: meta.duration })));
+        // the score comes mastered (−14 LUFS, peaks ~11 dB over that); at −17 LUFS it sits against the effects
+        // where the old synth did, with its peaks under the −6 dBFS limiter below, so it isn't limited twice
+        tracks.push([file, +(10 ** ((-17 - MUSIC_LUFS) / 20)).toFixed(3)]);
       }
       let sfx = null, cueList = null;
       const sfxFile = path.join(outDir, `${name}-sfx.wav`);
@@ -190,7 +195,7 @@ try {
       if (song) {
         const num = (k) => (opt(k) === undefined ? undefined : Number(opt(k)));
         const stems = opt('stems') === undefined ? undefined : opt('stems') === 'none' ? false : path.resolve(opt('stems'));
-        const fit = (fx) => fitSong(path.resolve(song), { duration: meta.duration, sfx: fx, bpm: num('bpm'), downbeat: num('downbeat'), from: num('from') ?? 0, stems, ending: num('ending'), tempo: flag('keep-tempo') ? undefined : meta.music?.bpm });
+        const fit = (fx) => fitSong(path.resolve(song), { duration: meta.duration, sfx: fx, bpm: num('bpm'), downbeat: num('downbeat'), from: num('from') ?? 0, stems, ending: num('ending'), land: num('land'), tempo: flag('keep-tempo') ? undefined : meta.music?.bpm });
         let { wav, report: r } = await fit(sfx);
         // Once the song has landed and is closing, results stay quiet: a pop over the fading song sounds
         // like more is coming, not like the end (the founder, 2026-10-19). Clicks, typing and moves keep theirs.

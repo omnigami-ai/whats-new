@@ -208,3 +208,6 @@ The detailed Lamplit rev 4 measurements above describe that reference film.
 Fernwise's portrait rev 4 retains its cream/moss palette, Keeper mark, light
 checks, rescue checklist and real watering flow, with the house rules above
 and its new photographic proof. Square and wide are unreviewed this round.
+
+The score's sound is `music.style`: `'synth'`, the default, for Lamplit's reference, and `'organic'` for the Fernwise example. For the user's product, pick by what it is: `'organic'` for plants, food and drink, and other natural or handmade things; `'synth'` (oscillators, the default) for software and tools; `'felt'` (a sparse felt piano over a sub bass and a light kit) for a quiet, minimal film. In a break (`music.breaks`) the drums, bass and lead stop and the chords play on; the film's name seeds the key (always major), the progressions and the patterns.
+
