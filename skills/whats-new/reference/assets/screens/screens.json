@@ -1,0 +1,909 @@
+{
+ "url": "http://localhost:4412/lamplit/app/#/runs",
+ "viewport": [
+  1440,
+  900
+ ],
+ "captures": {
+  "runs": {
+   "file": "runs@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    120,
+    1204,
+    470
+   ]
+  },
+  "callout": {
+   "file": "callout@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    120,
+    1204,
+    470
+   ]
+  },
+  "fanout": {
+   "file": "fanout@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    640
+   ]
+  },
+  "sched-00": {
+   "file": "sched-00@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-01": {
+   "file": "sched-01@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-02": {
+   "file": "sched-02@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-03": {
+   "file": "sched-03@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-04": {
+   "file": "sched-04@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-05": {
+   "file": "sched-05@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-06": {
+   "file": "sched-06@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-07": {
+   "file": "sched-07@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-08": {
+   "file": "sched-08@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-09": {
+   "file": "sched-09@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-10": {
+   "file": "sched-10@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-11": {
+   "file": "sched-11@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-12": {
+   "file": "sched-12@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    404
+   ]
+  },
+  "sched-13": {
+   "file": "sched-13@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    418
+   ]
+  },
+  "sched-14": {
+   "file": "sched-14@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    418
+   ]
+  },
+  "sched-15": {
+   "file": "sched-15@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    418
+   ]
+  },
+  "sched-16": {
+   "file": "sched-16@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    418
+   ]
+  },
+  "sched-17": {
+   "file": "sched-17@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    418
+   ]
+  },
+  "sched-18": {
+   "file": "sched-18@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    418
+   ]
+  },
+  "sched-19": {
+   "file": "sched-19@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    418
+   ]
+  },
+  "sched-20": {
+   "file": "sched-20@2.webp",
+   "scale": 2,
+   "rect": [
+    248,
+    136,
+    1168,
+    418
+   ]
+  },
+  "failed": {
+   "file": "failed@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    470
+   ]
+  },
+  "queued": {
+   "file": "queued@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    470
+   ]
+  },
+  "running": {
+   "file": "running@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    470
+   ]
+  },
+  "succeeded": {
+   "file": "succeeded@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    470
+   ]
+  }
+ },
+ "rects": {
+  "runs": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": [
+    248,
+    136,
+    1168,
+    269
+   ],
+   "nowLine": [
+    1339.13,
+    195,
+    1,
+    199
+   ],
+   "barRunning": [
+    1300.95,
+    239,
+    38.16,
+    14
+   ],
+   "laneResize": [
+    265,
+    232,
+    1134,
+    27
+   ],
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": null,
+   "runTitle": null,
+   "status": null,
+   "replayFromStep": null,
+   "waterfall": null,
+   "outcome": null,
+   "stepWriteLedger": null,
+   "steps": [],
+   "logs": null,
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null
+  },
+  "callout": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": [
+    248,
+    136,
+    1168,
+    269
+   ],
+   "nowLine": [
+    1339.13,
+    195,
+    1,
+    199
+   ],
+   "barRunning": [
+    1300.95,
+    239,
+    38.16,
+    14
+   ],
+   "laneResize": [
+    265,
+    232,
+    1134,
+    27
+   ],
+   "callout": [
+    1037.13,
+    265,
+    320,
+    260
+   ],
+   "calloutOpen": [
+    1052.13,
+    482,
+    290,
+    28
+   ],
+   "runHead": null,
+   "runTitle": null,
+   "status": null,
+   "replayFromStep": null,
+   "waterfall": null,
+   "outcome": null,
+   "stepWriteLedger": null,
+   "steps": [],
+   "logs": null,
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null
+  },
+  "fanout": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    339,
+    28
+   ],
+   "status": null,
+   "replayFromStep": null,
+   "waterfall": [
+    248,
+    184,
+    848,
+    176
+   ],
+   "outcome": null,
+   "stepWriteLedger": null,
+   "steps": [
+    [
+     265,
+     265,
+     814,
+     42
+    ],
+    [
+     265,
+     307,
+     814,
+     42
+    ]
+   ],
+   "logs": [
+    248,
+    376,
+    848,
+    309
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null
+  },
+  "schedule": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": null,
+   "runTitle": null,
+   "status": null,
+   "replayFromStep": null,
+   "waterfall": null,
+   "outcome": null,
+   "stepWriteLedger": null,
+   "steps": [],
+   "logs": null,
+   "newSchedule": [
+    248,
+    136,
+    1168,
+    404
+   ],
+   "scheduleField": [
+    269,
+    233,
+    606.77,
+    50
+   ],
+   "scheduleResult": [
+    896.77,
+    185,
+    518.23,
+    354
+   ],
+   "cron": [
+    916.77,
+    205,
+    244,
+    40
+   ],
+   "nextRuns": [
+    916.77,
+    347,
+    478.23,
+    172
+   ],
+   "scheduleSummary": [
+    269,
+    421,
+    606.77,
+    46
+   ]
+  },
+  "typed": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": null,
+   "runTitle": null,
+   "status": null,
+   "replayFromStep": null,
+   "waterfall": null,
+   "outcome": null,
+   "stepWriteLedger": null,
+   "steps": [],
+   "logs": null,
+   "newSchedule": [
+    248,
+    136,
+    1168,
+    418
+   ],
+   "scheduleField": [
+    269,
+    233,
+    606.77,
+    50
+   ],
+   "scheduleResult": [
+    896.77,
+    185,
+    518.23,
+    368
+   ],
+   "cron": [
+    916.77,
+    205,
+    248.69,
+    40
+   ],
+   "nextRuns": [
+    916.77,
+    347,
+    478.23,
+    172
+   ],
+   "scheduleSummary": [
+    269,
+    421,
+    606.77,
+    70
+   ]
+  },
+  "failed": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    411.84,
+    28
+   ],
+   "status": null,
+   "replayFromStep": [
+    1177.38,
+    104,
+    198.63,
+    32
+   ],
+   "waterfall": [
+    248,
+    184,
+    848,
+    234
+   ],
+   "outcome": null,
+   "stepWriteLedger": [
+    265,
+    349,
+    814,
+    58
+   ],
+   "steps": [
+    [
+     265,
+     265,
+     814,
+     42
+    ],
+    [
+     265,
+     307,
+     814,
+     42
+    ],
+    [
+     265,
+     349,
+     814,
+     58
+    ]
+   ],
+   "logs": [
+    248,
+    434,
+    848,
+    442
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null
+  },
+  "queued": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    644.67,
+    28
+   ],
+   "status": [
+    489.34,
+    107,
+    144.75,
+    26
+   ],
+   "replayFromStep": null,
+   "waterfall": [
+    248,
+    236,
+    848,
+    278
+   ],
+   "outcome": [
+    265,
+    297,
+    814,
+    44
+   ],
+   "stepWriteLedger": [
+    265,
+    461,
+    814,
+    42
+   ],
+   "steps": [
+    [
+     265,
+     377,
+     814,
+     42
+    ],
+    [
+     265,
+     419,
+     814,
+     42
+    ],
+    [
+     265,
+     461,
+     814,
+     42
+    ]
+   ],
+   "logs": [
+    248,
+    530,
+    848,
+    133
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null
+  },
+  "running": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    613.92,
+    28
+   ],
+   "status": [
+    489.34,
+    107,
+    114,
+    26
+   ],
+   "replayFromStep": null,
+   "waterfall": [
+    248,
+    236,
+    848,
+    278
+   ],
+   "outcome": [
+    265,
+    297,
+    814,
+    44
+   ],
+   "stepWriteLedger": [
+    265,
+    461,
+    814,
+    42
+   ],
+   "steps": [
+    [
+     265,
+     377,
+     814,
+     42
+    ],
+    [
+     265,
+     419,
+     814,
+     42
+    ],
+    [
+     265,
+     461,
+     814,
+     42
+    ]
+   ],
+   "logs": [
+    248,
+    530,
+    848,
+    221
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null
+  },
+  "succeeded": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    639.53,
+    28
+   ],
+   "status": [
+    489.34,
+    107,
+    139.61,
+    26
+   ],
+   "replayFromStep": null,
+   "waterfall": [
+    248,
+    236,
+    848,
+    278
+   ],
+   "outcome": [
+    265,
+    297,
+    814,
+    44
+   ],
+   "stepWriteLedger": [
+    265,
+    461,
+    814,
+    42
+   ],
+   "steps": [
+    [
+     265,
+     377,
+     814,
+     42
+    ],
+    [
+     265,
+     419,
+     814,
+     42
+    ],
+    [
+     265,
+     461,
+     814,
+     42
+    ]
+   ],
+   "logs": [
+    248,
+    530,
+    848,
+    331
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null
+  }
+ },
+ "typed": {
+  "sched": "every weekday at 9am"
+ }
+}

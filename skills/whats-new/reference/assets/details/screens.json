@@ -1,0 +1,481 @@
+{
+ "url": "http://127.0.0.1:4436/lamplit/app/#/runs/4812",
+ "viewport": [
+  1440,
+  900
+ ],
+ "captures": {
+  "failed": {
+   "file": "failed@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    800
+   ]
+  },
+  "queued": {
+   "file": "queued@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    800
+   ]
+  },
+  "running": {
+   "file": "running@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    800
+   ]
+  },
+  "succeeded": {
+   "file": "succeeded@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    800
+   ]
+  },
+  "fanout": {
+   "file": "fanout@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    800
+   ]
+  }
+ },
+ "rects": {
+  "failed": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    411.84,
+    28
+   ],
+   "status": null,
+   "replayFromStep": [
+    1177.38,
+    104,
+    198.63,
+    32
+   ],
+   "waterfall": [
+    248,
+    184,
+    848,
+    234
+   ],
+   "outcome": null,
+   "stepWriteLedger": [
+    265,
+    349,
+    814,
+    58
+   ],
+   "steps": [
+    [
+     265,
+     265,
+     814,
+     42
+    ],
+    [
+     265,
+     307,
+     814,
+     42
+    ],
+    [
+     265,
+     349,
+     814,
+     58
+    ]
+   ],
+   "logs": [
+    248,
+    434,
+    848,
+    442
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null,
+   "details": [
+    1112,
+    184,
+    304,
+    432
+   ]
+  },
+  "queued": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    644.67,
+    28
+   ],
+   "status": [
+    489.34,
+    107,
+    144.75,
+    26
+   ],
+   "replayFromStep": null,
+   "waterfall": [
+    248,
+    236,
+    848,
+    278
+   ],
+   "outcome": [
+    265,
+    297,
+    814,
+    44
+   ],
+   "stepWriteLedger": [
+    265,
+    461,
+    814,
+    42
+   ],
+   "steps": [
+    [
+     265,
+     377,
+     814,
+     42
+    ],
+    [
+     265,
+     419,
+     814,
+     42
+    ],
+    [
+     265,
+     461,
+     814,
+     42
+    ]
+   ],
+   "logs": [
+    248,
+    530,
+    848,
+    133
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null,
+   "details": [
+    1112,
+    236,
+    304,
+    432
+   ]
+  },
+  "running": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    613.92,
+    28
+   ],
+   "status": [
+    489.34,
+    107,
+    114,
+    26
+   ],
+   "replayFromStep": null,
+   "waterfall": [
+    248,
+    236,
+    848,
+    278
+   ],
+   "outcome": [
+    265,
+    297,
+    814,
+    44
+   ],
+   "stepWriteLedger": [
+    265,
+    461,
+    814,
+    42
+   ],
+   "steps": [
+    [
+     265,
+     377,
+     814,
+     42
+    ],
+    [
+     265,
+     419,
+     814,
+     42
+    ],
+    [
+     265,
+     461,
+     814,
+     42
+    ]
+   ],
+   "logs": [
+    248,
+    530,
+    848,
+    221
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null,
+   "details": [
+    1112,
+    236,
+    304,
+    432
+   ]
+  },
+  "succeeded": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    639.53,
+    28
+   ],
+   "status": [
+    489.34,
+    107,
+    139.61,
+    26
+   ],
+   "replayFromStep": null,
+   "waterfall": [
+    248,
+    236,
+    848,
+    278
+   ],
+   "outcome": [
+    265,
+    297,
+    814,
+    44
+   ],
+   "stepWriteLedger": [
+    265,
+    461,
+    814,
+    42
+   ],
+   "steps": [
+    [
+     265,
+     377,
+     814,
+     42
+    ],
+    [
+     265,
+     419,
+     814,
+     42
+    ],
+    [
+     265,
+     461,
+     814,
+     42
+    ]
+   ],
+   "logs": [
+    248,
+    530,
+    848,
+    331
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null,
+   "details": [
+    1112,
+    236,
+    304,
+    432
+   ]
+  },
+  "fanout": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "timeline": null,
+   "nowLine": null,
+   "barRunning": null,
+   "laneResize": null,
+   "callout": null,
+   "calloutOpen": null,
+   "runHead": [
+    248,
+    68,
+    1168,
+    100
+   ],
+   "runTitle": [
+    248,
+    106,
+    339,
+    28
+   ],
+   "status": null,
+   "replayFromStep": null,
+   "waterfall": [
+    248,
+    184,
+    848,
+    176
+   ],
+   "outcome": null,
+   "stepWriteLedger": null,
+   "steps": [
+    [
+     265,
+     265,
+     814,
+     42
+    ],
+    [
+     265,
+     307,
+     814,
+     42
+    ]
+   ],
+   "logs": [
+    248,
+    376,
+    848,
+    309
+   ],
+   "newSchedule": null,
+   "scheduleField": null,
+   "scheduleResult": null,
+   "cron": null,
+   "nextRuns": null,
+   "scheduleSummary": null,
+   "details": [
+    1112,
+    184,
+    304,
+    372
+   ]
+  }
+ },
+ "typed": {}
+}

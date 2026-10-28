@@ -1,0 +1,571 @@
+{
+  "url": "http://localhost:4406/fernwise/app/#/today",
+  "viewport": "mobile",
+  "ready": "[data-ready]",
+  "rects": {
+    "ring": "[data-ring=\"monty\"]"
+  },
+  "steps": [
+    {
+      "eval": "document.querySelector('#screen').scrollTop=2000"
+    },
+    {
+      "rects": "ring"
+    },
+    {
+      "rects": "ring"
+    },
+    {
+      "eval": "const ring=document.querySelector('[data-ring=\"monty\"] .ring-fill');window.ringAnimations=[ring.animate([{strokeDashoffset:'96'},{strokeDashoffset:'0'}],{duration:1000,easing:'cubic-bezier(.4,0,.2,1)',fill:'both'}),ring.animate([{stroke:'rgb(217,115,78)'},{stroke:'rgb(62,107,58)'}],{duration:600,easing:'cubic-bezier(.4,0,.2,1)',fill:'both'})];ringAnimations.forEach(a=>{a.pause();a.currentTime=0});"
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=0.0)"
+    },
+    {
+      "capture": "ring-00",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=16.666666666666668)"
+    },
+    {
+      "capture": "ring-01",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=33.333333333333336)"
+    },
+    {
+      "capture": "ring-02",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=50.0)"
+    },
+    {
+      "capture": "ring-03",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=66.66666666666667)"
+    },
+    {
+      "capture": "ring-04",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=83.33333333333333)"
+    },
+    {
+      "capture": "ring-05",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=100.0)"
+    },
+    {
+      "capture": "ring-06",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=116.66666666666667)"
+    },
+    {
+      "capture": "ring-07",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=133.33333333333334)"
+    },
+    {
+      "capture": "ring-08",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=150.0)"
+    },
+    {
+      "capture": "ring-09",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=166.66666666666666)"
+    },
+    {
+      "capture": "ring-10",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=183.33333333333334)"
+    },
+    {
+      "capture": "ring-11",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=200.0)"
+    },
+    {
+      "capture": "ring-12",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=216.66666666666666)"
+    },
+    {
+      "capture": "ring-13",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=233.33333333333334)"
+    },
+    {
+      "capture": "ring-14",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=250.0)"
+    },
+    {
+      "capture": "ring-15",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=266.6666666666667)"
+    },
+    {
+      "capture": "ring-16",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=283.3333333333333)"
+    },
+    {
+      "capture": "ring-17",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=300.0)"
+    },
+    {
+      "capture": "ring-18",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=316.6666666666667)"
+    },
+    {
+      "capture": "ring-19",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=333.3333333333333)"
+    },
+    {
+      "capture": "ring-20",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=350.0)"
+    },
+    {
+      "capture": "ring-21",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=366.6666666666667)"
+    },
+    {
+      "capture": "ring-22",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=383.3333333333333)"
+    },
+    {
+      "capture": "ring-23",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=400.0)"
+    },
+    {
+      "capture": "ring-24",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=416.6666666666667)"
+    },
+    {
+      "capture": "ring-25",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=433.3333333333333)"
+    },
+    {
+      "capture": "ring-26",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=450.0)"
+    },
+    {
+      "capture": "ring-27",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=466.6666666666667)"
+    },
+    {
+      "capture": "ring-28",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=483.3333333333333)"
+    },
+    {
+      "capture": "ring-29",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=500.0)"
+    },
+    {
+      "capture": "ring-30",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=516.6666666666666)"
+    },
+    {
+      "capture": "ring-31",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=533.3333333333334)"
+    },
+    {
+      "capture": "ring-32",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=550.0)"
+    },
+    {
+      "capture": "ring-33",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=566.6666666666666)"
+    },
+    {
+      "capture": "ring-34",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=583.3333333333334)"
+    },
+    {
+      "capture": "ring-35",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=600.0)"
+    },
+    {
+      "capture": "ring-36",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=616.6666666666666)"
+    },
+    {
+      "capture": "ring-37",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=633.3333333333334)"
+    },
+    {
+      "capture": "ring-38",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=650.0)"
+    },
+    {
+      "capture": "ring-39",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=666.6666666666666)"
+    },
+    {
+      "capture": "ring-40",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=683.3333333333334)"
+    },
+    {
+      "capture": "ring-41",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=700.0)"
+    },
+    {
+      "capture": "ring-42",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=716.6666666666666)"
+    },
+    {
+      "capture": "ring-43",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=733.3333333333334)"
+    },
+    {
+      "capture": "ring-44",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=750.0)"
+    },
+    {
+      "capture": "ring-45",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=766.6666666666666)"
+    },
+    {
+      "capture": "ring-46",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=783.3333333333334)"
+    },
+    {
+      "capture": "ring-47",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=800.0)"
+    },
+    {
+      "capture": "ring-48",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=816.6666666666666)"
+    },
+    {
+      "capture": "ring-49",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=833.3333333333334)"
+    },
+    {
+      "capture": "ring-50",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=850.0)"
+    },
+    {
+      "capture": "ring-51",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=866.6666666666666)"
+    },
+    {
+      "capture": "ring-52",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=883.3333333333334)"
+    },
+    {
+      "capture": "ring-53",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=900.0)"
+    },
+    {
+      "capture": "ring-54",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=916.6666666666666)"
+    },
+    {
+      "capture": "ring-55",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=933.3333333333334)"
+    },
+    {
+      "capture": "ring-56",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=950.0)"
+    },
+    {
+      "capture": "ring-57",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=966.6666666666666)"
+    },
+    {
+      "capture": "ring-58",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=983.3333333333334)"
+    },
+    {
+      "capture": "ring-59",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    },
+    {
+      "eval": "ringAnimations.forEach(a=>a.currentTime=1000.0)"
+    },
+    {
+      "capture": "ring-60",
+      "around": "[data-ring=\"monty\"]",
+      "pad": 2,
+      "scale": 3
+    }
+  ]
+}

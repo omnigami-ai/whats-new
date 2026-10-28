@@ -1,0 +1,23 @@
+{
+  "url": "http://127.0.0.1:4412/lamplit/app/#/runs/52318",
+  "viewport": "desktop",
+  "ready": "[data-ready]",
+  "rects": {
+    "proof": ".wf-bar.running"
+  },
+  "steps": [
+    {
+      "rects": "fanout-proof"
+    },
+    {
+      "capture": "fanout-proof",
+      "rect": [
+        445,
+        248,
+        380,
+        83
+      ],
+      "scale": 5
+    }
+  ]
+}

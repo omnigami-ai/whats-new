@@ -1,0 +1,479 @@
+{
+ "url": "http://127.0.0.1:4436/fernwise/app/#/light",
+ "viewport": [
+  390,
+  844
+ ],
+ "captures": {
+  "light-stand": {
+   "file": "light-stand@3.webp",
+   "scale": 3,
+   "rect": [
+    16,
+    130,
+    358,
+    603
+   ]
+  },
+  "light-window": {
+   "file": "light-window@3.webp",
+   "scale": 3,
+   "rect": [
+    16,
+    130,
+    358,
+    603
+   ]
+  },
+  "light-back": {
+   "file": "light-back@3.webp",
+   "scale": 3,
+   "rect": [
+    16,
+    130,
+    358,
+    603
+   ]
+  },
+  "rescue": {
+   "file": "rescue@3.webp",
+   "scale": 3,
+   "rect": [
+    16,
+    114,
+    358,
+    619
+   ]
+  },
+  "rescue-1": {
+   "file": "rescue-1@3.webp",
+   "scale": 3,
+   "rect": [
+    16,
+    114,
+    358,
+    619
+   ]
+  },
+  "rescue-2": {
+   "file": "rescue-2@3.webp",
+   "scale": 3,
+   "rect": [
+    16,
+    114,
+    358,
+    619
+   ]
+  },
+  "rescue-remind": {
+   "file": "rescue-remind@3.webp",
+   "scale": 3,
+   "rect": [
+    16,
+    114,
+    358,
+    619
+   ]
+  },
+  "today": {
+   "file": "today@3.webp",
+   "scale": 3,
+   "rect": [
+    12,
+    152,
+    366,
+    425
+   ]
+  },
+  "watered-1": {
+   "file": "watered-1@3.webp",
+   "scale": 3,
+   "rect": [
+    12,
+    152,
+    366,
+    425
+   ]
+  },
+  "watered-2": {
+   "file": "watered-2@3.webp",
+   "scale": 3,
+   "rect": [
+    12,
+    152,
+    366,
+    425
+   ]
+  },
+  "watered-3": {
+   "file": "watered-3@5.webp",
+   "scale": 5,
+   "rect": [
+    12,
+    152,
+    366,
+    326
+   ]
+  },
+  "you": {
+   "file": "you@3.webp",
+   "scale": 3,
+   "rect": [
+    0,
+    0,
+    390,
+    844
+   ]
+  }
+ },
+ "rects": {
+  "light-stand": {
+   "page": [
+    0,
+    0,
+    390,
+    844
+   ],
+   "viewfinder": [
+    16,
+    130,
+    358,
+    236
+   ],
+   "reading": [
+    16,
+    378,
+    358,
+    355
+   ],
+   "lux": [
+    51,
+    507,
+    288,
+    42
+   ],
+   "verdict": [
+    33,
+    581,
+    324,
+    73
+   ],
+   "move": [
+    33,
+    668,
+    324,
+    48
+   ],
+   "checks": [],
+   "remind": null,
+   "cards": [],
+   "water": [],
+   "watered": null,
+   "done": null,
+   "screen": [
+    0,
+    0,
+    390,
+    844
+   ]
+  },
+  "light-window": {
+   "page": [
+    0,
+    0,
+    390,
+    844
+   ],
+   "viewfinder": [
+    16,
+    130,
+    358,
+    236
+   ],
+   "reading": [
+    16,
+    378,
+    358,
+    355
+   ],
+   "lux": [
+    51,
+    507,
+    288,
+    42
+   ],
+   "verdict": [
+    33,
+    581,
+    324,
+    73
+   ],
+   "move": [
+    33,
+    668,
+    324,
+    48
+   ],
+   "checks": [],
+   "remind": null,
+   "cards": [],
+   "water": [],
+   "watered": null,
+   "done": null,
+   "screen": [
+    0,
+    0,
+    390,
+    844
+   ]
+  },
+  "rescue": {
+   "page": [
+    0,
+    0,
+    390,
+    844
+   ],
+   "viewfinder": null,
+   "reading": null,
+   "lux": null,
+   "verdict": null,
+   "move": null,
+   "checks": [
+    [
+     21,
+     494,
+     348,
+     56
+    ],
+    [
+     21,
+     550,
+     348,
+     56
+    ],
+    [
+     21,
+     606,
+     348,
+     56
+    ]
+   ],
+   "remind": [
+    20,
+    681,
+    350,
+    52
+   ],
+   "cards": [],
+   "water": [],
+   "watered": null,
+   "done": null,
+   "screen": [
+    0,
+    0,
+    390,
+    844
+   ]
+  },
+  "today": {
+   "page": [
+    0,
+    0,
+    390,
+    844
+   ],
+   "viewfinder": null,
+   "reading": null,
+   "lux": null,
+   "verdict": null,
+   "move": null,
+   "checks": [],
+   "remind": null,
+   "cards": [
+    [
+     20,
+     221,
+     350,
+     106
+    ],
+    [
+     20,
+     337,
+     350,
+     106
+    ],
+    [
+     20,
+     453,
+     350,
+     116
+    ]
+   ],
+   "water": [
+    [
+     262.16,
+     242,
+     92.84,
+     40
+    ],
+    [
+     262.16,
+     358,
+     92.84,
+     40
+    ],
+    [
+     262.16,
+     469.5,
+     92.84,
+     40
+    ]
+   ],
+   "watered": null,
+   "done": null,
+   "screen": [
+    0,
+    0,
+    390,
+    844
+   ]
+  },
+  "watered-1": {
+   "page": [
+    0,
+    0,
+    390,
+    844
+   ],
+   "viewfinder": null,
+   "reading": null,
+   "lux": null,
+   "verdict": null,
+   "move": null,
+   "checks": [],
+   "remind": null,
+   "cards": [
+    [
+     20,
+     221,
+     350,
+     106
+    ],
+    [
+     20,
+     337,
+     350,
+     116
+    ]
+   ],
+   "water": [
+    [
+     262.16,
+     242,
+     92.84,
+     40
+    ],
+    [
+     262.16,
+     353.5,
+     92.84,
+     40
+    ]
+   ],
+   "watered": [
+    22,
+    481,
+    346,
+    16
+   ],
+   "done": null,
+   "screen": [
+    0,
+    0,
+    390,
+    844
+   ]
+  },
+  "watered-2": {
+   "page": [
+    0,
+    0,
+    390,
+    844
+   ],
+   "viewfinder": null,
+   "reading": null,
+   "lux": null,
+   "verdict": null,
+   "move": null,
+   "checks": [],
+   "remind": null,
+   "cards": [
+    [
+     20,
+     221,
+     350,
+     116
+    ]
+   ],
+   "water": [
+    [
+     262.16,
+     237.5,
+     92.84,
+     40
+    ]
+   ],
+   "watered": [
+    22,
+    365,
+    346,
+    16
+   ],
+   "done": null,
+   "screen": [
+    0,
+    0,
+    390,
+    844
+   ]
+  },
+  "watered-3": {
+   "page": [
+    0,
+    0,
+    390,
+    844
+   ],
+   "viewfinder": null,
+   "reading": null,
+   "lux": null,
+   "verdict": null,
+   "move": null,
+   "checks": [],
+   "remind": null,
+   "cards": [],
+   "water": [],
+   "watered": [
+    22,
+    237,
+    346,
+    16
+   ],
+   "done": [
+    18,
+    157,
+    354,
+    52
+   ],
+   "screen": [
+    0,
+    0,
+    390,
+    844
+   ]
+  }
+ },
+ "typed": {}
+}

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your film · omnigami</title>
+<style>
+  :root { font: 16px/1.5 system-ui, sans-serif; color: #171717; background: #f6f6f2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  main { max-width: 1140px; margin: auto; padding: 28px; }
+  h1 { font-size: 32px; letter-spacing: -.035em; margin: 0; }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  p { color: #62625c; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+  .stage { --ar: 1; background: #e9ebe6; aspect-ratio: var(--ar); width: min(100%, calc(75vh * var(--ar))); margin-inline: auto; border-radius: 20px; overflow: hidden; }
+  iframe { width: 100%; height: 100%; border: 0; }
+  .transport { display: flex; gap: 12px; align-items: center; margin-top: 14px; }
+  .transport input { flex: 1; min-width: 0; }
+  button, .download { border: 1px solid #d6d6d0; border-radius: 20px; background: white; padding: 9px 14px; color: inherit; font: inherit; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button[aria-current="true"], .primary { background: #171717; color: white; }
+  :focus-visible { outline: 3px solid #486dba; outline-offset: 3px; }
+  .states { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; list-style: none; }
+  .states button { font-size: 13px; }
+  aside { padding: 20px; border: 1px solid #dfdfd8; border-radius: 20px; background: white; }
+  label { display: block; font-weight: 500; margin-top: 14px; }
+  .fields input { display: block; width: 100%; font: inherit; margin-top: 5px; padding: 9px; border: 1px solid #d6d6d0; border-radius: 10px; }
+  small { display: block; color: #62625c; }
+  .actions { display: flex; gap: 8px; margin-top: 18px; }
+  [hidden] { display: none !important; }
+  #status { min-height: 3em; font-size: 14px; }
+  video { display: block; width: 100%; max-height: 75vh; background: #e9ebe6; border-radius: 16px; margin: 16px 0; }
+  .rendered { margin-top: 36px; }
+  .download { display: inline-block; text-decoration: none; }
+  @media (max-width: 760px) { main { padding: 20px; } .grid { grid-template-columns: minmax(0, 1fr); } }
+</style>
+<main>
+  <h1>Your film</h1>
+  <p>Watch, change the words, or ask your agent to revise a scene.</p>
+  <div class="grid">
+    <section aria-label="Live preview">
+      <div class="stage"><iframe title="Your live film" sandbox="allow-scripts"></iframe></div>
+      <div class="transport">
+        <button id="play" disabled>Play</button>
+        <input id="scrub" type="range" min="0" max="14" value="0" step="0.001" aria-label="Time" disabled>
+        <output id="time">0.00 s</output>
+      </div>
+      <div id="shapes" class="states" role="group" aria-label="Shape" hidden></div>
+      <ol id="states" class="states" aria-label="Jump to a scene"></ol>
+      <small>The live preview is silent. Watch the rendered film below for sound.</small>
+    </section>
+    <aside>
+      <h2>Change the words</h2>
+      <div id="fields" class="fields"></div>
+      <div class="actions"><button id="save" class="primary" disabled>Save words</button><button id="reset" disabled>Reset</button></div>
+      <p id="status" role="status">Loading the film…</p>
+      <small id="save-note">Save your words, then ask your agent to render again to update the MP4.</small>
+    </aside>
+  </div>
+  <section class="rendered" aria-labelledby="rendered-title">
+    <h2 id="rendered-title">Rendered film</h2>
+    <div id="rendered" hidden>
+      <video controls preload="metadata" aria-label="Rendered film with sound"></video>
+      <a class="download" href="/video/1x1.mp4" download="1x1.mp4">Download MP4</a>
+    </div>
+    <p id="pending">The MP4 appears here after your agent renders it. Refresh this page after a revision.</p>
+  </section>
+</main>
+<script type="module">
+  const $ = (id) => document.getElementById(id);
+  const frame = document.querySelector('iframe');
+  let meta, values = {}, saved = {}, t = 0, playing = false, last = null, dirty = false, saving = false, shape = '1:1';
+  const send = (data) => frame.contentWindow.postMessage(data, '*');
+  const SHAPE_NAMES = { '1:1': 'Square', '16:9': 'Wide', '9:16': 'Tall', '886:1920': 'App Store' };
+  function paint() {
+    send({ omni: 'seek', t, values: { ...values, size: shape } });
+    $('scrub').value = String(t);
+    $('time').textContent = t.toFixed(2) + ' s';
+    let active = 0;
+    meta.states.forEach(([start], i) => { if (t >= start) active = i; });
+    [...$('states').querySelectorAll('button')].forEach((button, i) => button.setAttribute('aria-current', String(i === active)));
+  }
+  function setPlaying(on) {
+    playing = on; last = null;
+    $('play').textContent = on ? 'Pause' : 'Play';
+  }
+  function markDirty() {
+    dirty = true;
+    $('status').textContent = 'Unsaved words. Save before rendering.';
+    $('save').disabled = saving;
+    paint();
+  }
+  function fields() {
+    $('fields').replaceChildren();
+    const text = meta.fields.filter((field) => field.type === 'text');
+    // A clip with no words to edit says so, instead of showing an empty editor.
+    document.querySelector('.actions').hidden = $('save-note').hidden = !text.length;
+    if (!text.length) {
+      const note = document.createElement('p');
+      note.textContent = 'This film has no words to edit here. Ask your agent for any change, then have it render again.';
+      $('fields').append(note);
+    }
+    for (const field of text) {
+      const label = document.createElement('label');
+      label.textContent = field.label;
+      const input = document.createElement('input');
+      input.value = String(values[field.id] ?? '');
+      if (field.maxLength) input.maxLength = field.maxLength;
+      input.addEventListener('input', () => { values[field.id] = input.value; markDirty(); });
+      label.append(input);
+      $('fields').append(label);
+      if (field.help) { const help = document.createElement('small'); help.textContent = field.help; $('fields').append(help); }
+    }
+  }
+  window.addEventListener('message', (event) => {
+    if (event.source !== frame.contentWindow || !event.data) return;
+    if (event.data.omni === 'error') { setPlaying(false); $('status').textContent = 'The film could not load: ' + event.data.message; return; }
+    if (event.data.omni !== 'ready' || meta) return;
+    meta = event.data;
+    const { size: _shape, ...words } = meta.defaults; // the shape is chosen here, never saved as a word
+    meta.words = words;
+    values = { ...words, ...saved };
+    const dur = () => (meta.durationBySize && meta.durationBySize[shape]) || meta.duration; // a film may set a length per shape
+    meta.dur = dur;
+    $('play').disabled = $('scrub').disabled = $('reset').disabled = false;
+    shape = meta.sizes.includes(meta.defaults.size) ? meta.defaults.size : meta.sizes[0];
+    if (meta.sizes.length > 1) {
+      $('shapes').hidden = false;
+      for (const s of meta.sizes) {
+        const button = document.createElement('button');
+        button.textContent = SHAPE_NAMES[s] || s;
+        button.addEventListener('click', () => { shape = s; t = Math.min(t, meta.dur() - .01); showShape(); paint(); });
+        $('shapes').append(button);
+      }
+    }
+    showShape();
+    meta.states.forEach(([start, name]) => {
+      const button = document.createElement('button');
+      button.textContent = name;
+      button.addEventListener('click', () => { setPlaying(false); t = Math.min(meta.dur() - .01, start + .35); paint(); });
+      const li = document.createElement('li'); li.append(button); $('states').append(li);
+    });
+    fields(); paint();
+    $('status').textContent = meta.fields.some((field) => field.type === 'text') ? 'Ready. Saved words are used when rendering.' : 'Ready.';
+    setPlaying(!matchMedia('(prefers-reduced-motion: reduce)').matches);
+    requestAnimationFrame(tick);
+  });
+  // the stage, the shape buttons and the rendered MP4 all follow the chosen shape
+  async function showShape() {
+    const [w, h] = shape.split(':').map(Number);
+    $('scrub').max = String(meta.dur());
+    if (w > 0 && h > 0) document.querySelector('.stage').style.setProperty('--ar', w / h);
+    [...$('shapes').children].forEach((b, i) => b.setAttribute('aria-current', String(meta.sizes[i] === shape)));
+    const file = shape.replace(':', 'x') + '.mp4', url = '/video/' + file;
+    const ok = (await fetch(url, { method: 'HEAD' })).ok;
+    $('rendered').hidden = !ok; $('pending').hidden = ok;
+    const video = document.querySelector('video'), link = document.querySelector('.download');
+    if (ok && !video.src.endsWith(url)) { video.src = url; link.href = url; link.download = file; }
+  }
+  function tick(now) {
+    if (playing && !document.hidden) {
+      if (last !== null) t = (t + (now - last) / 1000) % meta.dur();
+      last = now; paint();
+    } else last = null;
+    requestAnimationFrame(tick);
+  }
+  $('play').addEventListener('click', () => setPlaying(!playing));
+  $('scrub').addEventListener('input', () => { setPlaying(false); t = Number($('scrub').value); paint(); });
+  $('reset').addEventListener('click', () => { values = { ...meta.words }; fields(); markDirty(); });
+  $('save').addEventListener('click', async () => {
+    saving = true;
+    $('save').disabled = true;
+    const snapshot = JSON.stringify(values);
+    try {
+      const response = await fetch('/values', { method: 'POST', headers: { 'content-type': 'application/json' }, body: snapshot });
+      if (!response.ok) throw new Error('Save failed');
+      dirty = JSON.stringify(values) !== snapshot;
+      $('status').textContent = dirty ? 'New edits remain unsaved.' : 'Words saved. Render again to update the MP4.';
+    } catch { dirty = true; $('status').textContent = 'Could not save. Try again before rendering.'; }
+    saving = false;
+    $('save').disabled = !dirty;
+  });
+  window.addEventListener('beforeunload', (event) => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
+  try {
+    const response = await fetch('/values');
+    if (!response.ok) throw new Error('Could not load saved words');
+    saved = await response.json();
+    frame.addEventListener('load', () => send({ omni: 'load', values: saved }));
+    frame.src = '/film/index.html';
+  } catch { $('status').textContent = 'Saved words could not load. Fix values.json and refresh.'; }
+</script>
+</html>

@@ -1,0 +1,46 @@
+{
+ "url": "http://127.0.0.1:4437/lamplit/app/#/runs/4812",
+ "viewport": [
+  1440,
+  900
+ ],
+ "captures": {
+  "replay-pressed-01": {
+   "file": "replay-pressed-01@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    800
+   ]
+  },
+  "replay-pressed-02": {
+   "file": "replay-pressed-02@3.webp",
+   "scale": 3,
+   "rect": [
+    236,
+    60,
+    1192,
+    800
+   ]
+  }
+ },
+ "rects": {
+  "failed": {
+   "page": [
+    0,
+    0,
+    1440,
+    900
+   ],
+   "button": [
+    1177.38,
+    104,
+    198.63,
+    32
+   ]
+  }
+ },
+ "typed": {}
+}

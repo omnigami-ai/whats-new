@@ -1,0 +1,12 @@
+{
+  "url": "http://127.0.0.1:4437/lamplit/app/#/runs",
+  "viewport": "desktop",
+  "ready": "[data-ready]",
+  "rects": { "bar": "[data-bar=\"52318\"]", "open": "[data-callout-open]" },
+  "steps": [
+    { "rects": "timeline" },
+    { "drag": [[1320,246],[1320,246]], "capture": "bar-pressed", "frames": 2, "rect": [236,120,1204,470], "scale": 3 },
+    { "rects": "callout" },
+    { "drag": [[1215,496],[1215,496]], "capture": "open-pressed", "frames": 2, "rect": [236,120,1204,470], "scale": 3 }
+  ]
+}

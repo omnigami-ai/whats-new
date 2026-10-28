@@ -1,0 +1,196 @@
+{
+  "url": "http://127.0.0.1:4436/fernwise/app/#/light",
+  "viewport": "mobile",
+  "ready": "[data-ready]",
+  "rects": {
+    "viewfinder": "[data-viewfinder]",
+    "reading": "[data-reading]",
+    "lux": "[data-lux]",
+    "verdict": "[data-verdict]",
+    "move": "[data-action=\"move-window\"], [data-action=\"move-back\"]",
+    "checks": "[data-check]*",
+    "remind": "[data-action=\"remind\"]",
+    "cards": "[data-card]*",
+    "water": "[data-action=\"water\"]*",
+    "watered": "[data-watered-count]",
+    "done": "[data-done]",
+    "screen": "#screen"
+  },
+  "steps": [
+    {
+      "eval": "document.querySelector('#screen').scrollTop=2000"
+    },
+    {
+      "rects": "light-stand"
+    },
+    {
+      "capture": "light-stand",
+      "scale": 3,
+      "rect": [
+        16,
+        130,
+        358,
+        603
+      ]
+    },
+    {
+      "click": "[data-action=\"move-window\"]"
+    },
+    {
+      "rects": "light-window"
+    },
+    {
+      "capture": "light-window",
+      "scale": 3,
+      "rect": [
+        16,
+        130,
+        358,
+        603
+      ]
+    },
+    {
+      "click": "[data-action=\"move-back\"]"
+    },
+    {
+      "capture": "light-back",
+      "scale": 3,
+      "rect": [
+        16,
+        130,
+        358,
+        603
+      ]
+    },
+    {
+      "eval": "location.hash='#/rescue/dot'"
+    },
+    {
+      "eval": "document.querySelector('#screen').scrollTop=2000"
+    },
+    {
+      "rects": "rescue"
+    },
+    {
+      "capture": "rescue",
+      "scale": 3,
+      "rect": [
+        16,
+        114,
+        358,
+        619
+      ]
+    },
+    {
+      "click": "[data-check=\"brighter\"]"
+    },
+    {
+      "capture": "rescue-1",
+      "scale": 3,
+      "rect": [
+        16,
+        114,
+        358,
+        619
+      ]
+    },
+    {
+      "click": "[data-check=\"soil\"]"
+    },
+    {
+      "capture": "rescue-2",
+      "scale": 3,
+      "rect": [
+        16,
+        114,
+        358,
+        619
+      ]
+    },
+    {
+      "click": "[data-action=\"remind\"]"
+    },
+    {
+      "capture": "rescue-remind",
+      "scale": 3,
+      "rect": [
+        16,
+        114,
+        358,
+        619
+      ]
+    },
+    {
+      "click": "[data-tab=\"today\"]"
+    },
+    {
+      "rects": "today"
+    },
+    {
+      "capture": "today",
+      "scale": 3,
+      "rect": [
+        12,
+        152,
+        366,
+        425
+      ]
+    },
+    {
+      "click": "[data-action=\"water\"][data-plant=\"monty\"]"
+    },
+    {
+      "rects": "watered-1"
+    },
+    {
+      "capture": "watered-1",
+      "scale": 3,
+      "rect": [
+        12,
+        152,
+        366,
+        425
+      ]
+    },
+    {
+      "click": "[data-action=\"water\"][data-plant=\"pickles\"]"
+    },
+    {
+      "rects": "watered-2"
+    },
+    {
+      "capture": "watered-2",
+      "scale": 3,
+      "rect": [
+        12,
+        152,
+        366,
+        425
+      ]
+    },
+    {
+      "click": "[data-action=\"water\"][data-plant=\"fernando\"]"
+    },
+    {
+      "rects": "watered-3"
+    },
+    {
+      "capture": "watered-3",
+      "scale": 5,
+      "rect": [
+        12,
+        152,
+        366,
+        326
+      ]
+    },
+    {
+      "click": "[data-tab=\"you\"]"
+    },
+    {
+      "capture": "you",
+      "full": true,
+      "scale": 3
+    }
+  ]
+}

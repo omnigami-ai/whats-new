@@ -1,0 +1,24 @@
+{
+  "name": "omnigami-whats-new",
+  "displayName": "What’s new",
+  "version": "1.0.5",
+  "description": "Make a repeatable 20–30 second release video from a product changelog and real screens, in wide, square and tall. Use for a what's-new clip, app update, release notes video or new version announcement.",
+  "author": {
+    "name": "omnigami",
+    "url": "https://omnigami.ai"
+  },
+  "homepage": "https://omnigami.ai/skills/whats-new",
+  "repository": "https://github.com/omnigami-ai/whats-new",
+  "documentationUrl": "https://github.com/omnigami-ai/whats-new#readme",
+  "supportUrl": "https://omnigami.ai/#questions",
+  "privacyPolicyUrl": "https://omnigami.ai/legal/privacy",
+  "termsOfServiceUrl": "https://omnigami.ai/legal/terms",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "keywords": [
+    "video",
+    "launch video",
+    "product video",
+    "motion graphics",
+    "omnigami"
+  ]
+}
