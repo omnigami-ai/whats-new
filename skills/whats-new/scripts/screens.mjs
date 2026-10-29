@@ -8,6 +8,10 @@
 //     "viewport": "desktop" | "mobile" | [width, height],   desktop 1440 × 900, mobile a 390 × 844 phone
 //     "ready": "selector",          wait for it after loading (optional)
 //     "init": "js",                 run after loading, e.g. to hold an animation still (optional)
+//     "setup": "setup.mjs",         a module beside the plan, for an app that needs a signed-in session or sample data
+//                                   from its own backend (optional): `export const args` (Chrome flags) and
+//                                   `export async function before(page)`, run before loading, e.g. answering the app's
+//                                   API from local fixtures so nothing reaches its live data
 //     "hide": ["selector", ...],    hidden while capturing, e.g. a video the film composites itself
 //     "rects": { "name": "selector", "names": "selector*" },  page rects to record; * records every match
 //     "steps": [
@@ -42,6 +46,7 @@
 // no animation it can seek.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { requireChrome, chromeArgs } from './chrome.mjs';
 
@@ -57,8 +62,10 @@ const view = (scale) => ({ width: vw, height: vh, deviceScaleFactor: scale, isMo
 const settle = (ms = 350) => new Promise((r) => setTimeout(r, ms));
 const manifest = { url: plan.url, viewport: [vw, vh], captures: {}, rects: {}, typed: {}, animations: {} };
 
-const browser = await puppeteer.launch({ executablePath: requireChrome(), headless: true, args: ['--force-color-profile=srgb', '--hide-scrollbars', ...chromeArgs()] });
+const setup = plan.setup ? await import(pathToFileURL(path.resolve(path.dirname(path.resolve(planFile)), plan.setup)).href) : {};
+const browser = await puppeteer.launch({ executablePath: requireChrome(), headless: true, args: ['--force-color-profile=srgb', '--hide-scrollbars', ...chromeArgs(), ...(setup.args || [])] });
 const page = await browser.newPage();
+if (setup.before) await setup.before(page);
 
 async function load() {
   await page.setViewport(view(2));

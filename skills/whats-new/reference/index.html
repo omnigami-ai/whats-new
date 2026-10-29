@@ -78,7 +78,8 @@
   // ---------- KEEP: type. Words rise from behind a mask at their baseline ----------
   function setText(c, font, size, tracking = 0) { c.font = font(size); c.letterSpacing = `${tracking * size}px`; c.textBaseline = 'alphabetic'; c.textAlign = 'left'; }
   const widthOf = (c, font, size, s, tracking = 0) => { setText(c, font, size, tracking); return c.measureText(s).width; };
-  const capOf = (font, size) => capRatio(g, font) * size;
+  // capRatio sets the font on a cache miss; preserve the caller's drawing state.
+  const capOf = (font, size) => { g.save(); const cap = capRatio(g, font) * size; g.restore(); return cap; };
   function wrapAt(c, words, font, size, width, tracking) {
     const parts = [];
     for (const word of words) {

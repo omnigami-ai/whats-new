@@ -25,7 +25,8 @@
 //                            a film's length is template.duration, or template.durationBySize[size] if set (and its
 //                            score template.music, or template.musicBySize[size])
 //     --blur 4               motion blur: average 4 sub-frames across half a frame (a 180° shutter;
-//                            a film's template.shutters can widen it in places)
+//                            a film's template.shutters can widen it in places, [from, to, fraction], and
+//                            sample more densely there, [from, to, fraction, 2]: twice the sub-frames)
 //     --sound                add effects from the sound kit on the film's cues (needs --video)
 //     --music                add the film's own score (window.template.music), synthesised (needs --video)
 //     --audio-only           with --music or --audio: the film's soundtrack alone, mixed and levelled as --video
@@ -97,13 +98,14 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const origin = `http://127.0.0.1:${server.address().port}`;
 
-const browser = await puppeteer.launch({ executablePath: requireChrome(), headless: true, args: ['--force-color-profile=srgb', '--disable-lcd-text', '--font-render-hinting=none', ...chromeArgs()] });
+const launchBrowser = () => puppeteer.launch({ executablePath: requireChrome(), headless: true, args: ['--force-color-profile=srgb', '--disable-lcd-text', '--font-render-hinting=none', ...chromeArgs()] });
+const browser = await launchBrowser();
 let failed = false;
 const stressProblems = [];
 const determinism = [];
 try {
-  const openPage = async () => {
-    const page = await browser.newPage();
+  const openPage = async (host = browser) => {
+    const page = await host.newPage();
     try {
       page.on('pageerror', (e) => { console.error('film error:', e.message); failed = true; });
       page.on('console', (m) => { if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) console.error('film console:', m.text()); }); // missing files are reported below, by URL
@@ -134,6 +136,20 @@ try {
     await page.evaluate((v) => window.template.prepare(v), values);
     const frame = (t) => page.evaluate((t, v) => window.template.seek(t, v).toDataURL('image/png'), t, values);
     const png = (dataUrl) => Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64');
+    // several times averaged into one frame, in the page (a film's extra motion-blur samples)
+    const frameAverage = (ts) => page.evaluate((ts, v) => {
+      let sum = null, w = 0, h = 0;
+      for (const t of ts) {
+        const c = window.template.seek(t, v); w = c.width; h = c.height;
+        const d = c.getContext('2d').getImageData(0, 0, w, h).data;
+        if (!sum) sum = new Float32Array(d.length);
+        for (let i = 0; i < d.length; i++) sum[i] += d[i];
+      }
+      const out = document.createElement('canvas'); out.width = w; out.height = h;
+      const x = out.getContext('2d', { willReadFrequently: true }), img = x.createImageData(w, h);
+      for (let i = 0; i < sum.length; i++) img.data[i] = Math.round(sum[i] / ts.length);
+      x.putImageData(img, 0, 0); return out.toDataURL('image/png');
+    }, ts, values);
     const stills = async (label, times) => {
       const d = path.join(outDir, `${name}-${label}`);
       await rm(d, { recursive: true, force: true });
@@ -162,12 +178,13 @@ try {
       const hash = (b) => createHash('sha256').update(b).digest('hex');
       const first = new Map();
       for (const t of list) first.set(t, hash(png(await frame(t))));
-      // The fresh checks run the second order in a new page: the original page would reuse its decoded images, canvas
-      // rasters and caches, hiding first-draw differences. The film's own prepare() runs there before any seek.
-      const reverse = fresh ? await openPage() : page;
+      // Isolate the fresh page's GPU process as well: separate WebGL contexts in one Chrome process
+      // can round transmission rendering differently. Each page still prepares its own assets before seeking.
+      const freshBrowser = fresh ? await launchBrowser() : null;
       const mismatches = [];
       let prepareSeconds;
       try {
+        const reverse = fresh ? await openPage(freshBrowser) : page;
         const preparing = performance.now();
         if (fresh) await reverse.evaluate((v) => window.template.prepare(v), values);
         prepareSeconds = (performance.now() - preparing) / 1000;
@@ -175,7 +192,7 @@ try {
           const data = await reverse.evaluate((t, v) => window.template.seek(t, v).toDataURL('image/png'), t, values);
           if (hash(png(data)) !== first.get(t)) { mismatches.push(t); console.log(`${size}: frame at ${t}s differs`); }
         }
-      } finally { if (fresh) await reverse.close(); }
+      } finally { if (freshBrowser) await freshBrowser.close(); }
       const seconds = (performance.now() - started) / 1000;
       determinism.push({ size, full, frames: list.length, mismatches, seconds, prepareSeconds });
       await writeFile(path.join(outDir, 'determinism.json'), JSON.stringify(determinism, null, 2));
@@ -246,13 +263,17 @@ try {
       for (let i = 0; i < total; i++) {
         for (let k = 0; k < sub; k++) {
           const t0 = i / fps;
-          // shutter: half a frame by default (180°); a film can ask for more in places: shutters [[from, to, fraction]]
-          const sh = (meta.shutters.find(([a, b2]) => t0 >= a && t0 < b2) || [0, 0, 0.5])[2];
-          let t = (i + (sub > 1 ? (k / sub) * sh : 0)) / fps;
-          // a sub-frame past a hard cut would blend two shots: hold it just before the cut
-          const cut = meta.cuts.find((c) => c > t0 && c <= t);
-          if (cut !== undefined) t = cut - 1e-4;
-          if (!ff.stdin.write(png(await frame(t)))) await new Promise((r) => ff.stdin.once('drain', r));
+          // shutter: half a frame by default (180°); a film can ask for more in places: shutters [[from, to, fraction]],
+          // and for more samples there ([from, to, fraction, 2]: each sub-frame the average of 2 spread across its share),
+          // where a move is so fast that the sub-frames would show as separate copies
+          const [, , sh, more = 1] = meta.shutters.find(([a, b2]) => t0 >= a && t0 < b2) || [0, 0, 0.5, 1];
+          const ts = Array.from({ length: sub > 1 ? more : 1 }, (_, j) => {
+            const t = (i + (sub > 1 ? ((k + j / more) / sub) * sh : 0)) / fps;
+            // a sub-frame past a hard cut would blend two shots: hold it just before the cut
+            const cut = meta.cuts.find((c) => c > t0 && c <= t);
+            return cut !== undefined ? cut - 1e-4 : t;
+          });
+          if (!ff.stdin.write(png(ts.length > 1 ? await frameAverage(ts) : await frame(ts[0])))) await new Promise((r) => ff.stdin.once('drain', r));
         }
       }
       ff.stdin.end();
@@ -309,12 +330,12 @@ try {
         // Catch transient peaks at −6 dBFS before normalization, so short
         // impacts don't force the sustained mix below the loudness target.
         // 10 ms lookahead and 200 ms release: slow enough not to bend a kick's waveform.
-        const mix = (norm) => `${chains};${mixIn}amix=inputs=${tracks.length}:duration=longest:normalize=0,atrim=0:${meta.duration},alimiter=limit=0.5:attack=10:release=200:level=false,${norm},aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a]`; // the AAC encoder's own format: older ffmpeg (5.1) won't convert it for you
+        const mix = (norm) => `${chains};${mixIn}amix=inputs=${tracks.length}:duration=longest:normalize=0,atrim=0:${meta.duration},alimiter=limit=0.5:attack=10:release=200:level=false,${norm},alimiter=limit=0.708:attack=1:release=60:level=false,aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[a]`; // the AAC encoder's own format: older ffmpeg (5.1) won't convert it for you
         // loudness in two passes: measure the mix, then normalise it to −14 LUFS from those numbers
         // (one pass guesses as it goes, and lands a few LU quiet on a clip of a few seconds)
         // Leave 1 dB for 48 kHz resampling and AAC intersample overshoot;
         // decoded exports should retain about −1.5 dBTP of peak headroom.
-        const target = 'I=-14:TP=-2.5:LRA=11';
+        const target = 'I=-14:TP=-2.5:LRA=11'; // loudnorm alone can miss its ceiling (a test film reached +0.5 dBTP, 2026-10-28): the second limiter in mix() holds samples under −3 dBFS, room for the AAC encoder's overshoot
         const report = await capture('ffmpeg', ['-hide_banner', '-nostats', ...base, ...inputs, '-filter_complex', mix(`loudnorm=${target}:print_format=json`), '-map', '[a]', '-f', 'null', '-']);
         const m = JSON.parse(report.slice(report.lastIndexOf('{'), report.lastIndexOf('}') + 1));
         const graph = mix(`loudnorm=${target}:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`);
