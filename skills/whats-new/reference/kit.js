@@ -75,10 +75,210 @@ function loadFont(family, source, descriptors = {}) {
 const imageSrc = (value) => (value && typeof value === 'object' && 'src' in value ? value.src : value);
 const imageFocus = (value, fallback = [0.5, 0.5]) => (value && typeof value === 'object' && value.focus) || fallback;
 
+// ---------- CJK copy (assets load in prepareText only; Latin stays on its old path) ----------
+const hasCJK = value => /[\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(String(value));
+const textBase = new URL(document.currentScript?.dataset.textBase || './text/', document.currentScript?.src || document.baseURI).href;
+let cjkModule, cjkLoading, textValues = {};
+const textLanguage = (value, lang = textValues.lang || document.documentElement.lang || 'zh') => {
+  if (/\p{Script=Hangul}/u.test(value)) return 'ko';
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(value)) return 'ja';
+  if (/^ja(?:-|$)/i.test(lang)) return 'ja';
+  if (/^ko(?:-|$)/i.test(lang)) return 'ko';
+  return /^zh-(?:tw|hk|mo|hant)(?:-|$)/i.test(lang) ? 'zh-Hant' : 'zh-Hans';
+};
+const stringsIn = value => typeof value === 'string' ? [value] : value && typeof value === 'object'
+  ? Object.values(value).flatMap(stringsIn) : [];
+function useText(values = {}) { textValues = values; }
+async function prepareText(values = {}) {
+  useText(values);
+  const headline = stringsIn(values).filter(hasCJK).join('\n');
+  if (!headline) return; // no import, model or font request for Latin
+  cjkLoading ||= new Promise((resolve,reject)=>{
+    const script=document.createElement('script');script.src=new URL('cjk-text.js',textBase).href;
+    script.onload=()=>resolve(window.omniCJK);script.onerror=()=>{cjkLoading=null;reject(new Error('Could not load local CJK text support.'));};document.head.append(script);
+  });
+  cjkModule = await cjkLoading;
+  await cjkModule.prepareCJK({ headline, lang: values.lang });
+}
+// Some older films author captions as data rather than editable fields. Their
+// optional `copy` map keys are the original phrases; values are the product's
+// own words. Resolve before segmenting or typing, and also for native labels.
+const copyText = value => typeof value === 'string' ? (textValues.copy?.[value] ?? value) : value;
+function font(fontString, value, lang) {
+  value = copyText(value ?? stringsIn(textValues).filter(hasCJK).join(' '));
+  if (!hasCJK(value)) return fontString;
+  if (!cjkModule) throw new Error('Await template.prepare(values) before drawing CJK copy.');
+  const specified=/"Noto Sans (JP|KR|SC|TC)"/.exec(fontString)?.[1];
+  if(!lang&&specified&&!/[\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(value))lang={JP:'ja',KR:'ko',SC:'zh',TC:'zh-TW'}[specified];
+  cjkModule.assertCJKPrepared({ headline: value, lang: lang || textValues.lang });
+  const faces = cjkModule.scriptsFor(String(value), lang || textValues.lang || document.documentElement.lang || 'zh');
+  // Noto's bundled faces are upright. Mixed runs keep their Latin style;
+  // textContext measures/draws the CJK pieces separately without fake italics.
+  if (!/\p{Script=Latin}/u.test(value)) fontString = uprightFont(fontString);
+  return fontString.replace(/, \"Noto Sans (?:JP|KR|SC|TC)\"/g,'').replace(/(\d*\.?\d+)px/, (_, n) => `${Math.round(Number(n) * 64) / 64}px`) + faces.map(face => `, "Noto Sans ${face}"`).join('');
+}
+// Change the style prefix only, never a family name such as "Fraunces Italic".
+const uprightFont = fontString => fontString.replace(/^(.*?)((?:\d*\.)?\d+px)/, (_, style, size) => style.replace(/\b(?:italic|oblique(?:\s+-?[\d.]+deg)?)\s*/gi, '') + size);
+// Baseline pitch in pixels: use this floor while fitting AND drawing.
+const linePitch = (value, size, pitch = size * 1.1) => stringsIn(value).some(s => hasCJK(copyText(s))) ? Math.max(pitch, size * 1.25) : pitch;
+// Canvas applies one style to all fallback faces. Split only mixed italic
+// runs, so Latin keeps its italics and the bundled Noto pieces stay upright.
+function mixedItalic(ctx, method, value, args) {
+  const originalFont = ctx.font, align = ctx.textAlign;
+  const pieces = value.match(/[\p{Script=Han}\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303f\uff00-\uffef]+|[^\p{Script=Han}\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303f\uff00-\uffef]+/gu);
+  let width = 0;
+  ctx.textAlign = 'left';
+  const runs = pieces.map(text => {
+    ctx.font = hasCJK(text) ? font(uprightFont(originalFont), text) : originalFont;
+    const metrics = ctx.measureText(text), run = {text, font:ctx.font, metrics, x:width};
+    width += metrics.width; return run;
+  });
+  const right = align === 'right' || (align === 'end' && ctx.direction !== 'rtl') || (align === 'start' && ctx.direction === 'rtl');
+  const offset = align === 'center' ? width / 2 : right ? width : 0;
+  ctx.font = originalFont; ctx.textAlign = align;
+  if (method === 'measureText') {
+    const metrics = {width,
+      actualBoundingBoxLeft:offset - Math.min(...runs.map(r => r.x - r.metrics.actualBoundingBoxLeft)),
+      actualBoundingBoxRight:Math.max(...runs.map(r => r.x + r.metrics.actualBoundingBoxRight)) - offset};
+    for (const key of ['actualBoundingBoxAscent','actualBoundingBoxDescent','fontBoundingBoxAscent','fontBoundingBoxDescent']) metrics[key] = Math.max(...runs.map(r => r.metrics[key]));
+    return new Proxy(runs[0].metrics, {get:(target,key) => key in metrics ? metrics[key] : Reflect.get(target,key,target)});
+  }
+  const [x,y,maxWidth] = args, scale = maxWidth === undefined || maxWidth >= width ? 1 : maxWidth / width;
+  if (!(scale > 0)) return;
+  ctx.save();
+  try {
+    ctx.translate(x,y); ctx.scale(scale,1); ctx.textAlign = 'left';
+    for (const run of runs) { ctx.font = run.font; ctx[method](run.text,run.x-offset,0); }
+  } finally { ctx.restore(); }
+}
+const letterSpacing = (value, spacing) => hasCJK(copyText(value)) ? '0px' : spacing;
+// A local adapter, never a patch to browser prototypes. All film and helper
+// contexts use it, so measurements, fills and strokes share the SAME face and
+// zero CJK tracking, including glyph animations and cached offscreen layers.
+// Latin calls go straight to the native context without touching its state.
+const textContexts = new WeakMap(), preservedText = new WeakMap();
+function textContext(ctx, {preserve} = {}) {
+  if(preserve){preservedText.set(ctx,preserve);if(textContexts.has(ctx))preservedText.set(textContexts.get(ctx),preserve);}
+  if (textContexts.has(ctx)) return textContexts.get(ctx);
+  const methods = new Map();
+  const proxy = new Proxy(ctx, {
+    get(target, key) {
+      if (methods.has(key)) return methods.get(key);
+      const native = Reflect.get(target, key, target);
+      if (typeof native !== 'function') return native;
+      const call = ['measureText', 'fillText', 'strokeText'].includes(key) ? (value, ...args) => {
+        value = copyText(value);
+        if (!hasCJK(value)||preservedText.get(target)?.(value)) return native.call(target, value, ...args);
+        const oldFont = target.font, oldSpacing = target.letterSpacing;
+        // An explicitly selected fallback carries the enclosing run's language
+        // through a Han-only phrase/glyph (which cannot identify its language).
+        const specified=/"Noto Sans (JP|KR|SC|TC)"/.exec(oldFont)?.[1];
+        const runLang=specified&&!/[\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(value)?{JP:'ja',KR:'ko',SC:'zh',TC:'zh-TW'}[specified]:undefined;
+        target.font = font(oldFont, value, runLang); target.letterSpacing = '0px';
+        try {
+          if (/^[^\d]*\b(?:italic|oblique)\b/i.test(oldFont) && /\p{Script=Latin}/u.test(value)) return mixedItalic(target, key, value, args);
+          return native.call(target, value, ...args);
+        }
+        finally { target.font = oldFont; target.letterSpacing = oldSpacing; }
+      } : native.bind(target);
+      methods.set(key, call); return call;
+    },
+    set(target, key, value) { return Reflect.set(target, key, value, target); },
+  });
+  textContexts.set(ctx, proxy); textContexts.set(proxy, proxy);if(preserve)preservedText.set(proxy,preserve); return proxy;
+}
+// A break unit carries the source separator, so JP/ZH phrases never acquire
+// spaces. Korean bound words remain a single unit, with their internal space.
+function breakUnits(value, lang = textValues.lang) {
+  value = String(copyText(value));
+  if (!hasCJK(value)) return [...value.matchAll(/\S+\s*/gu)].map(m => ({text:m[0].trimEnd(), space:/\s$/u.test(m[0])}));
+  if (!cjkModule) throw new Error('Await template.prepare(values) before segmenting CJK copy.');
+  const points = cjkModule.boundaries(value, textLanguage(value, lang));
+  return points.slice(1).map((end, i) => { const raw = value.slice(points[i], end); return {text:raw.trim(), space:/\s$/u.test(raw)}; });
+}
+const joinUnits = units => units.map((u, i) => u.text + (i < units.length - 1 && u.space ? ' ' : '')).join('');
+// String-only bridge for legacy word choreography. New layouts use breakUnits.
+const words = (value, separator = ' ') => hasCJK(copyText(value)) ? breakUnits(value).map(u => u.text) : String(copyText(value)).split(separator);
+const wordGap = (value, index) => breakUnits(value)[index]?.space ? ' ' : '';
+const cjkFitCache = new Map();
+function fitCJK(ctx, opts) {
+  const cacheKey=JSON.stringify([Array.isArray(opts.text)?opts.text:copyText(opts.text),opts.fontFor(100,false),opts.fontFor(100,true),opts.maxWidth,opts.maxHeight,opts.maxLines,opts.maxSize,opts.minSize,opts.lineHeight,opts.lang||textValues.lang||document.documentElement.lang]);
+  if(cjkFitCache.has(cacheKey))return cjkFitCache.get(cacheKey);
+  const {fontFor,maxWidth,maxHeight=Infinity,maxLines=1,maxSize,minSize=8} = opts;
+  const lineHeight = Math.max(1.25, opts.lineHeight ?? 1.1);
+  const units = Array.isArray(opts.text) ? opts.text : null;
+  const value = units ? units.map((u,i) => (u.text ?? u.t ?? '') + (i < units.length-1 && u.space ? ' ' : '')).join('') : String(copyText(opts.text)).replace(/\*/g,'');
+  const lang = opts.lang || textValues.lang || document.documentElement.lang || 'zh';
+  const emphasized=units||parseEmphasis(opts.text), flags=new Uint8Array(value.length);
+  let at=0;
+  for(const word of emphasized){const start=value.indexOf(word.text,at);if(start<0)continue;at=start+word.text.length;if(word.em)flags.fill(1,start,at);}
+  const styled=emphasized.some(w=>w.em);
+  // A film may enlarge/italicise its emphasis. Measure exactly the pieces it
+  // draws, while the shared solver still owns all permitted line boundaries.
+  const rowAt=(line,size,start)=>{
+    let x=0,cursor=0;const parts=breakUnits(line,lang);
+    const words=parts.map((u,i)=>{
+      const offset=line.indexOf(u.text,cursor);cursor=offset+u.text.length;
+      const em=flags.slice(start+offset,start+cursor).some(Boolean);
+      ctx.font=font(fontFor(size,em),u.text,lang);ctx.letterSpacing='0px';
+      const width=ctx.measureText(u.text).width,word={...u,em,x,width};x+=width;
+      if(u.space&&i<parts.length-1){ctx.font=font(fontFor(size,false),value,lang);x+=ctx.measureText(' ').width;}
+      return word;
+    });
+    return {words,width:x};
+  };
+  const layouts = size => {
+    ctx.font = font(fontFor(size, false),value,lang); ctx.letterSpacing = '0px';
+    return cjkModule.cjkLayoutsFor(ctx,value,maxWidth,maxLines,lang,styled?(line,start)=>rowAt(line,size,start).width:undefined).filter(l => l.lines.length*size*lineHeight<=maxHeight+.01);
+  };
+  let lo=0,hi=maxSize;
+  for(let i=0;i<16;i++){const mid=(lo+hi)/2;if(layouts(mid).length)lo=mid;else hi=mid;}
+  const largest=layouts(maxSize).length?maxSize:lo;
+  const candidates=[];
+  for(let i=0;i<=10;i++){
+    const size=Math.floor(largest*(1-i*.005)*64)/64;
+    for(const layout of layouts(size))candidates.push({...layout,size});
+  }
+  candidates.sort((a,b)=>cjkModule.compareCJKLayouts(a,b)||b.size-a.size);
+  const best=candidates[0];
+  if(!best)throw new Error(`CJK copy cannot fit the text box: ${value}`);
+
+  ctx.font=font(fontFor(best.size,false),value,lang);
+  let sourceOffset=0;
+  const lines=best.lines.map(line=>{const start=value.indexOf(line,sourceOffset);sourceOffset=start+line.length;return rowAt(line,best.size,start);});
+  const result={size:best.size,lines,lineHeight:best.size*lineHeight,height:lines.length*best.size*lineHeight,width:Math.max(0,...lines.map(l=>l.width)),fits:best.size>=minSize,cjkRanking:{largestSize:largest,orphans:best.orphans,phrasing:best.phrasing,balance:best.balance}};
+  if(cjkFitCache.size>4000)cjkFitCache.clear();cjkFitCache.set(cacheKey,result);return result;
+}
+// Same ranked fitting for older string-line layout helpers; their Latin branch
+// remains in each reference, byte-for-byte as authored.
+function fitLines(ctx, value, fontFor, {maxWidth,maxHeight=Infinity,maxLines=3,maxSize,minSize=8,lineHeight=1.1}={}) {
+  const result=fitCJK(ctx,{text:value,fontFor,maxWidth,maxHeight,maxLines,maxSize,minSize,lineHeight});
+  return {...result,lines:result.lines.map(l=>joinUnits(l.words))};
+}
+// Register only at the template boundary. Loading happens before its original
+// prepare (which can measure/build text layers); each seek restores language
+// and copy from its OWN arguments, including when scrubbing backwards.
+function film(template, copyFields = {}) {
+  const prepare=template.prepare,seek=template.seek,defaults=template.defaults;
+  template.defaults=()=>{const values=defaults();return {...values,...copyFields,lang:values.lang||''};};
+  template.fields=[...(template.fields || []),...Object.keys(copyFields).map(id=>({id,label:id,type:'text',maxLength:Math.max(6,copyFields[id].length)})),{id:'lang',label:'Copy language',type:'text',maxLength:16}];
+  const resolved=values=>{const result={...template.defaults(),...values};result.copy={...Object.fromEntries(Object.entries(copyFields).map(([id,source])=>[source,result[id]])),...values.copy};return result;};
+  template.prepare=async function(values={}){await prepareText(resolved(values));return prepare.call(this,values);};
+  template.seek=function(t,values={}){useText(resolved(values));return seek.call(this,t,values);};
+  window.seek=template.seek;
+  return template;
+}
+
 // ---------- text ----------
 
 // "Your menu, *never out of date.*" → words, each flagged when inside *…*.
 function parseEmphasis(text) {
+  if (hasCJK(copyText(text))) {
+    let clean='',em=false;const flags=[];
+    for(const ch of String(copyText(text))){if(ch==='*'){em=!em;continue;}clean+=ch;for(let i=0;i<ch.length;i++)flags.push(em);}
+    let offset=0;
+    return breakUnits(clean).map(u=>{const at=clean.indexOf(u.text,offset);offset=at+u.text.length;return {...u,em:flags.slice(at,offset).some(Boolean)};});
+  }
   const words = [];
   let em = false;
   for (const raw of String(text).trim().split(/\s+/)) {
@@ -96,6 +296,7 @@ function parseEmphasis(text) {
 
 const measureCache = new Map();
 function measure(ctx, font, text) {
+  if(hasCJK(copyText(text))&&!preservedText.get(ctx)?.(copyText(text))){text=copyText(text);font=window.kit.font(font,text);}
   const key = font + '\u0000' + text;
   let w = measureCache.get(key);
   if (w === undefined) { ctx.font = font; w = ctx.measureText(text).width; measureCache.set(key, w); }
@@ -110,6 +311,7 @@ function measure(ctx, font, text) {
 // Results are cached: the same text in the same box lays out once.
 const fitCache = new Map();
 function fitText(ctx, opts) {
+  if (hasCJK(Array.isArray(opts.text) ? opts.text.map(w => w.text).join('') : copyText(opts.text))) return fitCJK(ctx, opts);
   const { text, fontFor, maxWidth, maxHeight = Infinity, maxLines = 1, maxSize, minSize = 8, lineHeight = 1.1, tracking = 0, balance = false } = opts;
   const key = [JSON.stringify(text), fontFor(100, false), fontFor(100, true), maxWidth, maxHeight, maxLines, maxSize, minSize, lineHeight, tracking, balance].join('|');
   const cached = fitCache.get(key);
@@ -220,7 +422,7 @@ function capMiddle(ctx, y) {
 }
 function centreText(ctx, text, x, y, maxWidth) {
   ctx.textBaseline = 'alphabetic';
-  const base = capMiddle(ctx, y);
+  const base = hasCJK(copyText(text))&&!preservedText.get(ctx)?.(copyText(text)) ? (() => { const m = ctx.measureText(text); return y + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2; })() : capMiddle(ctx, y);
   if (maxWidth === undefined) ctx.fillText(text, x, base); else ctx.fillText(text, x, base, maxWidth);
   return base;
 }
@@ -497,12 +699,13 @@ function converge(items, t, { to, dur = 0.6 } = {}) {
 
 const motion = { out, settle, snap, inOut, drawCursor, markReveal, iris, converge };
 
-window.kit = { clamp, lerp, ramp, smooth, spring, track, SNAPPY, DEFAULT, HEAVY, rng, loadImage, loadFont, imageSrc, imageFocus, parseEmphasis, measure, fitText, sizeToWidth, capRatio, sizeForCap, capMiddle, centreText, project, easeOutExpo, easeInOutCubic, roundRect, drawCover, fitBox, luminance, motion };
+window.kit = { hasCJK, textLanguage, prepareText, useText, copyText, font, linePitch, letterSpacing, textContext, breakUnits, joinUnits, words, wordGap, fitLines, film, clamp, lerp, ramp, smooth, spring, track, SNAPPY, DEFAULT, HEAVY, rng, loadImage, loadFont, imageSrc, imageFocus, parseEmphasis, measure, fitText, sizeToWidth, capRatio, sizeForCap, capMiddle, centreText, project, easeOutExpo, easeInOutCubic, roundRect, drawCover, fitBox, luminance, motion };
 
 // Inside a player's sandboxed iframe the page can't reach window.template, so
 // it drives the film by message: { omni: 'load', values } prepares it and is
 // answered with { omni: 'ready', … }; { omni: 'seek', t, values } paints a frame.
 if (window.parent !== window) {
+  let lastSeek = 0, pending = 0, preparing = Promise.resolve();
   window.addEventListener('message', async (e) => {
     const d = e.data, T = window.template;
     if (e.source !== window.parent || !d || typeof d.omni !== 'string' || !T) return;
@@ -511,7 +714,26 @@ if (window.parent !== window) {
       if (d.omni === 'load') {
         await T.prepare(values);
         window.parent.postMessage({ omni: 'ready', duration: T.duration, durationBySize: T.durationBySize || null, fps: T.fps, sizes: Object.keys(T.sizes || {}), fields: T.fields || [], states: T.states || [], defaults: T.defaults() }, '*');
-      } else if (d.omni === 'seek') T.seek(d.t, values);
+      } else if (d.omni === 'seek') {
+        const request = ++lastSeek;
+        // Text-only edits can introduce a face/model after the initial Latin
+        // load. Finish that preparation outside seek, discard obsolete draws.
+        const headline=stringsIn(values).filter(hasCJK).join('\n');
+        let ready=!headline;
+        if(headline&&cjkModule){try{cjkModule.assertCJKPrepared({headline,lang:values.lang});ready=true;}catch{}}
+        if(!ready){
+          ++pending;
+          // Serialize the first preparation of each script. A film can also
+          // prepare fixed multilingual labels and cached text layers here.
+          preparing=preparing.catch(()=>{}).then(async()=>{
+            let prepared=false;
+            if(cjkModule){try{cjkModule.assertCJKPrepared({headline,lang:values.lang});prepared=true;}catch{}}
+            if(!prepared)await T.prepare(values);
+          }).finally(()=>--pending);
+        }
+        if(pending)await preparing;
+        if(request===lastSeek)T.seek(d.t, values);
+      }
     } catch (err) {
       window.parent.postMessage({ omni: 'error', message: String(err && err.message || err) }, '*');
     }

@@ -2,7 +2,7 @@
 
 A release video you can make again with every version.
 
-Give it your changelog and your product. Each new feature gets a beat: its name, one line, and your real product doing exactly that, close up. Then one number that proves the release counts up, and your mark, the version and how to get it. You keep the film, so the next release only changes the features.
+Give it your changelog and your product. Each new feature gets a beat: its name, one line, and your real product doing exactly that, close up. Then one number that proves the release, and your mark and version.
 
 Watch it play live, and change its words, at [omnigami.ai/skills/whats-new](https://omnigami.ai/skills/whats-new).
 

@@ -6,6 +6,7 @@
 //   {
 //     "url": "https://product.example/page",
 //     "viewport": "desktop" | "mobile" | [width, height],   desktop 1440 × 900, mobile a 390 × 844 phone
+//     "format": "png",              opt-in lossless capture; default remains WebP q92
 //     "ready": "selector",          wait for it after loading (optional)
 //     "init": "js",                 run after loading, e.g. to hold an animation still (optional)
 //     "setup": "setup.mjs",         a module beside the plan, for an app that needs a signed-in session or sample data
@@ -34,7 +35,7 @@
 //                                                           before the action, so every frame shares it
 //     ]
 //   }
-// Writes WebP captures and screens.json: each capture's file, scale and page rect (CSS px),
+// Writes WebP (or plan.format: "png") captures and screens.json: each capture's file, scale and page rect (CSS px),
 // the rects of every state, the text typed into each typed capture, and each animate step's
 // frames, fps and the animations it found. Animations, transitions and the caret are switched
 // off, so every capture is still, except inside an animate step.
@@ -53,6 +54,8 @@ import { requireChrome, chromeArgs } from './chrome.mjs';
 const [planFile, outArg] = process.argv.slice(2);
 if (!planFile || !outArg) { console.error('usage: node scripts/screens.mjs <plan.json> <out-dir>'); process.exit(1); }
 const plan = JSON.parse(await readFile(planFile, 'utf8'));
+const format = plan.format ?? 'webp';
+if (!['webp', 'png'].includes(format)) throw new Error('plan.format must be webp or png');
 const out = path.resolve(outArg);
 await mkdir(out, { recursive: true });
 
@@ -114,8 +117,8 @@ async function capture(name, step) {
   await shoot(name, scale, clip);
 }
 async function shoot(name, scale, clip) {
-  const file = `${name}@${scale}.webp`;
-  const buffer = await page.screenshot({ type: 'webp', quality: 92, ...(clip ? { clip, captureBeyondViewport: true } : { fullPage: true }) });
+  const file = `${name}@${scale}.${format}`;
+  const buffer = await page.screenshot({ type: format, ...(format === 'webp' ? { quality: 92 } : {}), ...(clip ? { clip, captureBeyondViewport: true } : { fullPage: true }) });
   await writeFile(path.join(out, file), buffer);
   const pageRect = clip ? [clip.x, clip.y, clip.width, clip.height] : await page.evaluate(() => [0, 0, document.documentElement.scrollWidth, document.documentElement.scrollHeight]);
   manifest.captures[name] = { file, scale, rect: pageRect };

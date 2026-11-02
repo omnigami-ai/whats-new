@@ -8,6 +8,8 @@ description: >-
 
 # What's new
 
+For Japanese, Korean or Chinese product pages, keep the copy in that language and set the film’s `lang` to the page’s `<html lang>`; bundled Noto faces and phrase breaks handle the text.
+
 Make the clip a product makes again with every release. Each new feature gets
 a beat: its name, one to five words with a full stop ("Fan-out."), a short
 line under it, and the real product doing exactly that, zoomed in close.

@@ -50,6 +50,9 @@
 //                            bufsize: '11M', x264: 'nal-hrd=cbr', profile: 'high', level: '4.0',
 //                            audioBitrate: '256k' } }, a constant 11 Mbps; otherwise --video
 //                            encodes H.264 at CRF 17 with 192 kbps AAC)
+//                            Optional encode range/matrix: { crf: 17, range: 'pc', matrix: 'bt601' }
+//                            converts and tags full-range BT.601. range: 'tv' or matrix: 'bt709'
+//                            are also supported. Omit both to preserve the existing encoder defaults.
 //     --stress               the quick test: at every key time, with the default words, every text
 //                            field at its longest (wide letters) and at its shortest. Fails when the
 //                            words are cut by the frame's edge, overlap other text or fall under the
@@ -255,11 +258,22 @@ try {
       // the film's delivery spec for this size, if it has one: a set bitrate, profile and level
       const spec = (meta.encode && meta.encode[size]) || null;
       // (or a quality level with x264 tuning: { crf, tune, x264 }, e.g. a dark, dithered film that bands at the default)
-      const rate = spec && spec.crf ? ['-crf', String(spec.crf), ...(spec.tune ? ['-tune', spec.tune] : []), ...(spec.x264 ? ['-x264-params', spec.x264] : [])] : spec ? ['-profile:v', spec.profile || 'high', '-level:v', String(spec.level || '4.0'), '-b:v', spec.bitrate, '-maxrate', spec.maxrate || spec.bitrate, '-bufsize', spec.bufsize || spec.maxrate || spec.bitrate, ...(spec.minrate ? ['-minrate', spec.minrate] : []), ...(spec.x264 ? ['-x264-params', spec.x264] : [])] : ['-crf', '17'];
+      const rate = spec && (spec.crf || (!spec.bitrate && (spec.range !== undefined || spec.matrix !== undefined))) ? ['-crf', String(spec.crf ?? 17), ...(spec.tune ? ['-tune', spec.tune] : []), ...(spec.x264 ? ['-x264-params', spec.x264] : [])] : spec ? ['-profile:v', spec.profile || 'high', '-level:v', String(spec.level || '4.0'), '-b:v', spec.bitrate, '-maxrate', spec.maxrate || spec.bitrate, '-bufsize', spec.bufsize || spec.maxrate || spec.bitrate, ...(spec.minrate ? ['-minrate', spec.minrate] : []), ...(spec.x264 ? ['-x264-params', spec.x264] : [])] : ['-crf', '17'];
       const vf = sub > 1 ? ['-vf', `tmix=frames=${sub},select='eq(mod(n\\,${sub})\\,${sub - 1})',setpts=N/${fps}/TB`] : [];
+      // Colour conversion is opt-in: existing films keep the exact filter and encoder arguments.
+      const range = spec?.range, matrix = spec?.matrix;
+      if (range !== undefined && !['pc', 'tv'].includes(range)) throw Error('encode.range must be pc or tv');
+      if (matrix !== undefined && !['bt601', 'bt709'].includes(matrix)) throw Error('encode.matrix must be bt601 or bt709');
+      const taggedMatrix = matrix || (range === 'pc' ? 'bt601' : undefined);
+      const tag = taggedMatrix === 'bt601' ? 'smpte170m' : 'bt709';
+      const colour = range || matrix ? ['-sws_flags', 'accurate_rnd+full_chroma_int',
+        ...(range ? ['-color_range', range] : []),
+        ...(taggedMatrix ? ['-colorspace', tag, '-color_primaries', tag, '-color_trc', tag] : [])] : [];
+      const conversion = [taggedMatrix ? `out_color_matrix=${taggedMatrix}` : '', range ? `out_range=${range}` : ''].filter(Boolean);
+      const filters = conversion.length ? ['-vf', [...(vf.length ? ['format=gbrp', vf[1]] : []), `scale=${conversion.join(':')}`].join(',')] : vf;
       const total = Math.round(meta.duration * fps);
       if (!audioOnly) {
-      const ff = spawn('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps * sub), '-i', '-', ...vf, '-r', String(fps), '-c:v', 'libx264', ...rate, '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', silent], { stdio: ['pipe', 'inherit', 'inherit'] });
+      const ff = spawn('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps * sub), '-i', '-', ...filters, '-r', String(fps), '-c:v', 'libx264', ...rate, '-preset', 'slow', ...colour, '-pix_fmt', 'yuv420p', '-movflags', '+faststart', silent], { stdio: ['pipe', 'inherit', 'inherit'] });
       for (let i = 0; i < total; i++) {
         for (let k = 0; k < sub; k++) {
           const t0 = i / fps;
