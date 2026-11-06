@@ -8,6 +8,8 @@ description: >-
 
 # What's new
 
+**If several skills could do this:** when the request doesn't name this skill and your agent also has other omnigami skills that make the same kind of thing (other launch films, shots, decks or mockups), list them by name and ask which one the user wants before you start. If it's named, or it's the only one installed, go ahead.
+
 For Japanese, Korean or Chinese product pages, keep the copy in that language and set the film’s `lang` to the page’s `<html lang>`; bundled Noto faces and phrase breaks handle the text.
 
 Make the clip a product makes again with every release. Each new feature gets

@@ -53,6 +53,9 @@
 //                            Optional encode range/matrix: { crf: 17, range: 'pc', matrix: 'bt601' }
 //                            converts and tags full-range BT.601. range: 'tv' or matrix: 'bt709'
 //                            are also supported. Omit both to preserve the existing encoder defaults.
+//     --deck-video           delivery profile for silent decks: H.264 High/4.1, YUV420, CRF 4,
+//                            stillimage tuning, limited-range BT.709 and left-sited chroma.
+//                            Overrides template.encode; --lossless is a separate archival path.
 //     --stress               the quick test: at every key time, with the default words, every text
 //                            field at its longest (wide letters) and at its shortest. Fails when the
 //                            words are cut by the frame's edge, overlap other text or fall under the
@@ -60,6 +63,9 @@
 //                            didn't, and always when text is set with textBaseline 'middle' (it sits
 //                            high in its container; kit.centreText centres on the capitals); writes
 //                            sheets and report.json to <out>/stress/ for a reviewer
+//                            Boundary-audited films also check consecutive handoff frames, fail
+//                            default-copy faults and pops, and measure whole-layer translation
+//                            separately from clipping. Opaque incoming cards occlude outgoing text.
 //     --out dir              (default <film-dir>/../out)
 import { createServer } from 'node:http';
 import { readFile, mkdir, writeFile, rm } from 'node:fs/promises';
@@ -71,6 +77,7 @@ import { requireChrome, chromeArgs } from './chrome.mjs';
 import { effects } from './sfx.mjs';
 import { compose, wav as toWav, LUFS as MUSIC_LUFS } from './music.mjs';
 import { fitSong } from './song.mjs';
+import { recordText, textProblems, textPops, motionKey } from './stress.mjs';
 
 // the sounds that say "it arrived": after a fitted song lands they're left out (see --audio)
 const RESULTS = new Set(['pop', 'ping', 'sparkle', 'chime']);
@@ -225,7 +232,10 @@ try {
     // judging motion (easing, overshoot, cuts inside a turn, text that vanishes) that sparse contact sheets can't show
     if (flag('review')) {
       const at = [...new Set([...meta.cuts.map((c) => +(c - 6 / fps).toFixed(3)), ...meta.keyTimes.map((k) => +(k - 6 / fps).toFixed(3))])]
-        .filter((t) => t >= 0 && t < meta.duration - 0.8).sort((a, b) => a - b).filter((t, i, all) => i === 0 || t - all[i - 1] > 0.3);
+        .filter((t) => t >= 0 && t < meta.duration - 0.8).sort((a, b) => a - b)
+        // spaced against the last strip kept (not the previous candidate), so a run of keys a few frames apart can't erase
+        // every later moment (a signal's arrival after its launch: Veyset proof run 2)
+        .reduce((kept, t) => (kept.length && t - kept.at(-1) <= 0.3 ? kept : [...kept, t]), []);
       const dir = path.join(outDir, `${name}-review`);
       await mkdir(dir, { recursive: true });
       for (const t0 of at) await tile(await stills('strip', Array.from({ length: 12 }, (_, i) => t0 + (2 * i) / fps)), 320, 6, path.join(dir, `${t0.toFixed(2).padStart(6, '0')}.png`));
@@ -255,10 +265,13 @@ try {
     if (flag('video') || audioOnly) {
       const silent = path.join(outDir, `${name}-silent.mp4`), file = path.join(outDir, audioOnly ? `${name}-${opt('audio') ? 'song' : 'score'}.m4a` : `${name}.mp4`);
       const sub = Math.max(1, Number(opt('blur', 1)));
+      // --lossless retains all chroma for archival decks; normal delivery keeps its existing encoding.
       // the film's delivery spec for this size, if it has one: a set bitrate, profile and level
-      const spec = (meta.encode && meta.encode[size]) || null;
+      if (flag('deck-video') && flag('lossless')) throw Error('--deck-video and --lossless are separate delivery/archive profiles');
+      const spec = flag('deck-video') ? { crf: 4, tune: 'stillimage', range: 'tv', matrix: 'bt709',
+        x264: 'chroma-qp-offset=-2', profile: 'high', level: '4.1' } : (meta.encode && meta.encode[size]) || null;
       // (or a quality level with x264 tuning: { crf, tune, x264 }, e.g. a dark, dithered film that bands at the default)
-      const rate = spec && (spec.crf || (!spec.bitrate && (spec.range !== undefined || spec.matrix !== undefined))) ? ['-crf', String(spec.crf ?? 17), ...(spec.tune ? ['-tune', spec.tune] : []), ...(spec.x264 ? ['-x264-params', spec.x264] : [])] : spec ? ['-profile:v', spec.profile || 'high', '-level:v', String(spec.level || '4.0'), '-b:v', spec.bitrate, '-maxrate', spec.maxrate || spec.bitrate, '-bufsize', spec.bufsize || spec.maxrate || spec.bitrate, ...(spec.minrate ? ['-minrate', spec.minrate] : []), ...(spec.x264 ? ['-x264-params', spec.x264] : [])] : ['-crf', '17'];
+      const rate = flag('lossless') ? ['-crf', '0'] : spec && (spec.crf || (!spec.bitrate && (spec.range !== undefined || spec.matrix !== undefined))) ? ['-crf', String(spec.crf ?? 17), ...(spec.tune ? ['-tune', spec.tune] : []), ...(spec.x264 ? ['-x264-params', spec.x264] : [])] : spec ? ['-profile:v', spec.profile || 'high', '-level:v', String(spec.level || '4.0'), '-b:v', spec.bitrate, '-maxrate', spec.maxrate || spec.bitrate, '-bufsize', spec.bufsize || spec.maxrate || spec.bitrate, ...(spec.minrate ? ['-minrate', spec.minrate] : []), ...(spec.x264 ? ['-x264-params', spec.x264] : [])] : ['-crf', '17'];
       const vf = sub > 1 ? ['-vf', `tmix=frames=${sub},select='eq(mod(n\\,${sub})\\,${sub - 1})',setpts=N/${fps}/TB`] : [];
       // Colour conversion is opt-in: existing films keep the exact filter and encoder arguments.
       const range = spec?.range, matrix = spec?.matrix;
@@ -270,10 +283,17 @@ try {
         ...(range ? ['-color_range', range] : []),
         ...(taggedMatrix ? ['-colorspace', tag, '-color_primaries', tag, '-color_trc', tag] : [])] : [];
       const conversion = [taggedMatrix ? `out_color_matrix=${taggedMatrix}` : '', range ? `out_range=${range}` : ''].filter(Boolean);
-      const filters = conversion.length ? ['-vf', [...(vf.length ? ['format=gbrp', vf[1]] : []), `scale=${conversion.join(':')}`].join(',')] : vf;
+      // Old ffmpeg versions express left chroma siting as positions in 1/256 luma samples.
+      // Set the conversion and H.264 metadata together; tagging alone would misdescribe the pixels.
+      if (flag('deck-video')) conversion.push('in_range=pc', 'out_h_chr_pos=0', 'out_v_chr_pos=128', 'flags=lanczos+accurate_rnd+full_chroma_int');
+      // Some ffmpeg versions let an untagged PNG's frame properties override the encoder tags.
+      // Set the filtered frame's tags too, after conversion, without changing its pixel values.
+      const filters = conversion.length ? ['-vf', [...(vf.length ? ['format=gbrp', vf[1]] : []), `scale=${conversion.join(':')}`,
+        ...(flag('deck-video') ? ['setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709'] : [])].join(',')] : vf;
+      const delivery = flag('deck-video') ? ['-profile:v', 'high', '-level:v', '4.1', '-maxrate', '40M', '-bufsize', '40M', '-chroma_sample_location', 'left'] : [];
       const total = Math.round(meta.duration * fps);
       if (!audioOnly) {
-      const ff = spawn('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps * sub), '-i', '-', ...filters, '-r', String(fps), '-c:v', 'libx264', ...rate, '-preset', 'slow', ...colour, '-pix_fmt', 'yuv420p', '-movflags', '+faststart', silent], { stdio: ['pipe', 'inherit', 'inherit'] });
+      const ff = spawn('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps * sub), '-i', '-', ...filters, '-r', String(fps), '-c:v', 'libx264', ...rate, ...delivery, '-preset', 'slow', ...colour, '-pix_fmt', flag('lossless') ? 'yuv444p' : 'yuv420p', '-movflags', '+faststart', silent], { stdio: ['pipe', 'inherit', 'inherit'] });
       for (let i = 0; i < total; i++) {
         for (let k = 0; k < sub; k++) {
           const t0 = i / fps;
@@ -373,37 +393,65 @@ try {
         cases.long[f.id] = longText(was, f.maxLength || Math.round(was.length * 1.5));
         cases.short[f.id] = shortText(was);
       }
-      const times = meta.keyTimes.length ? meta.keyTimes : range(1);
+      const times = (meta.keyTimes.length ? meta.keyTimes : range(1)).filter(t=>t>=0&&t<meta.duration);
+      const boundaryFrames = await page.evaluate(size=>window.template.boundaryFrames?.(size)||[],size);
+      const strict = await page.evaluate(()=>typeof window.template.boundaryFrames==='function' && typeof window.template.frameAudit==='function');
+      // Keep sheets sparse and legible, but measure every boundary frame plus
+      // neighbours. Never infer a travelling layer from one sampled still.
+      const inspected = [...new Set([...times,...boundaryFrames.map(f=>f/fps)])].filter(t=>t>=0&&t<meta.duration).sort((a,b)=>a-b);
+      const sampleTimes = [...new Map(inspected.flatMap(t=>[-2,-1,0,1,2].map(f=>t+f/fps)).filter(t=>t>=0&&t<meta.duration).map(t=>[motionKey(t),t])).values()].sort((a,b)=>a-b);
       const sdir = path.join(outDir, 'stress');
       await mkdir(sdir, { recursive: true });
       let measured = 0;
       const known = new Set(); // kind|time of every problem with the default words: the film as designed
+      // --stress by itself must still reject stacked native moves and faulty
+      // captions. These checks used to run only when --check was also passed.
+      if (strict && !flag('check') && !flag('check-fresh') && !flag('check-full')) {
+        const own = await page.evaluate(v=>window.template.selfChecks?.(v)||[],base);
+        for (const c of own.filter(c=>!c.ok)) {
+          stressProblems.push({size,case:'defaults',fails:true,kind:'film check',text:c.name,detail:c.detail||''});
+          console.log(`${size}: ${c.name}: FAIL ${c.detail||''}`);
+        }
+      }
       for (const [label, v] of Object.entries(cases)) {
         await page.evaluate((v) => window.template.prepare(v), v);
         const d = path.join(sdir, `${name}-${label}`);
         await rm(d, { recursive: true, force: true });
         await mkdir(d, { recursive: true });
         const words = fields.map((f) => String(v[f.id] ?? '')).filter(Boolean);
-        const seen = new Set();
-        for (const [i, t] of times.entries()) {
-          const shot = await page.evaluate((t, v) => {
-            const rec = window.__texts; rec.log.length = 0; rec.on = true;
-            const c = window.template.seek(t, v); rec.on = false;
-            return { w: c.width, h: c.height, texts: rec.log.filter((r) => r.canvas === c && r.alpha >= 0.5).map(({ text, box, size, middle }) => ({ text, box, size, middle })), png: c.toDataURL('image/png') };
-          }, t, v);
-          await writeFile(path.join(d, `${String(i).padStart(3, '0')}.png`), png(shot.png));
+        const seen = new Map();
+        const shots = new Map(), sheetIndex = new Map(times.map((t,i)=>[motionKey(t),i]));
+        for (const t of sampleTimes) {
+          const index = sheetIndex.get(motionKey(t));
+          const shot = await page.evaluate((t,v,sheet) => {
+            const rec=window.__texts; rec.log=[]; rec.surfaces=[]; rec.serial=0; rec.on=true;
+            let c;
+            try { c=window.template.seek(t,v); } finally { rec.on=false; }
+            return {w:c.width,h:c.height,texts:rec.log.filter(r=>r.canvas===c&&r.alpha>=.5).map(({canvas,...e})=>e),
+              surfaces:rec.surfaces.filter(r=>r.canvas===c).map(({canvas,...e})=>e),audit:window.template.frameAudit?.(),png:sheet?c.toDataURL('image/png'):null};
+          },t,v,index!==undefined);
+          if (index!==undefined) await writeFile(path.join(d,`${String(index).padStart(3,'0')}.png`),png(shot.png));
+          delete shot.png;
+          shots.set(motionKey(t),shot);
+        }
+        for (const t of inspected) {
+          const shot=shots.get(motionKey(t)),previous=shots.get(motionKey(t-1/fps)),next=shots.get(motionKey(t+1/fps));
           measured += shot.texts.length;
-          for (const p of textProblems(shot, words)) {
+          for (const p of [...textProblems(shot,words,previous,next,shots.get(motionKey(t-2/fps)),shots.get(motionKey(t+2/fps))),...(strict?textPops(shot,previous,next,words):[])]) {
             if (label === 'defaults') { if (p.ours) known.add(`${p.kind}|${t}`); }
-            const fails = p.kind === 'off-centre' || (label !== 'defaults' && p.ours && !known.has(`${p.kind}|${t}`));
+            const fails = p.kind!=='travel' && (p.kind==='off-centre' || (p.ours && (strict || (label!=='defaults'&&!known.has(`${p.kind}|${t}`)))));
             const key = `${p.kind}|${p.text}|${fails}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
-            stressProblems.push({ size, case: label, t, fails, ...p });
+            if (seen.has(key)) {
+              const first=seen.get(key); (first.times ||= [first.t]).push(t); continue;
+            }
+            const problem={size,case:label,t,fails,...p};
+            seen.set(key,problem);
+            stressProblems.push(problem);
             if (fails) console.log(`${size} ${label} @${t}s: ${p.kind}: ${p.detail}`);
           }
         }
         await tile(d, size === '9:16' ? 220 : 384, size === '9:16' ? 8 : 5, path.join(sdir, `${name}-${label}-sheet.png`));
+        console.log(`${size} ${label} stress: measured ${inspected.length} times${strict?' including consecutive boundary frames':''}`);
       }
       if (!measured) console.log(`${size} stress: no text measured (the film draws its words elsewhere); judge the sheets by eye`);
       await page.evaluate((v) => window.template.prepare(v), values);
@@ -411,9 +459,9 @@ try {
   }
   if (flag('stress')) {
     await writeFile(path.join(outDir, 'stress', 'report.json'), JSON.stringify(stressProblems, null, 2));
-    const fails = stressProblems.filter((p) => p.fails).length, notes = stressProblems.length - fails;
+    const fails = stressProblems.filter((p) => p.fails).length, travel = stressProblems.filter(p=>p.kind==='travel').length, notes = stressProblems.length - fails - travel;
     const where = path.join(outDir, 'stress');
-    const noted = notes ? `; ${notes} notes for the reviewer (text the film itself crops, overlaps or sets small) in ${path.join(where, 'report.json')}` : '';
+    const noted = travel || notes ? `; ${travel} whole-layer travel notes, ${notes} other text notes for the reviewer in ${path.join(where, 'report.json')}` : '';
     console.log(fails ? `stress: FAIL (${fails} problems the words cause${noted})` : `stress: pass (${sizes.join(', ')}; defaults, long and short words${noted})`);
     console.log(`stress sheets for the reviewer: ${where}`);
     if (fails) failed = true;
@@ -425,67 +473,6 @@ try {
   await browser.close();
   server.close();
   if (failed) process.exitCode = 1;
-}
-
-// The quick test. In the page: every word the film draws (with fillText or strokeText, at 50%
-// opacity or more), as a box in frame pixels and an on-screen size, followed through any helper
-// canvas copied into the frame. Read-only: it measures, and draws nothing.
-function recordText() {
-  const P = CanvasRenderingContext2D.prototype, rec = { on: false, log: [] };
-  window.__texts = rec;
-  const place = (T, pts) => { pts = pts.map(([px, py]) => [T.a * px + T.c * py + T.e, T.b * px + T.d * py + T.f]); const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; };
-  const corners = ([l, t, r, b]) => [[l, t], [r, t], [l, b], [r, b]];
-  for (const name of ['fillText', 'strokeText']) {
-    const draw = P[name];
-    P[name] = function (text, x, y, maxWidth) {
-      if (rec.on && String(text).trim()) {
-        const m = this.measureText(text), k = maxWidth !== undefined && m.width > maxWidth ? maxWidth / m.width : 1, T = this.getTransform();
-        const box = [x - m.actualBoundingBoxLeft * k, y - m.actualBoundingBoxAscent, x + m.actualBoundingBoxRight * k, y + m.actualBoundingBoxDescent];
-        const size = parseFloat((this.font.match(/([\d.]+)px/) || [])[1] || 0) * Math.sqrt(Math.abs(T.a * T.d - T.b * T.c));
-        rec.log.push({ canvas: this.canvas, text: String(text), box: place(T, corners(box)), size, alpha: this.globalAlpha, middle: this.textBaseline === 'middle' });
-      }
-      return draw.apply(this, arguments);
-    };
-  }
-  const copy = P.drawImage;
-  P.drawImage = function (src, ...a) {
-    if (rec.on && src instanceof HTMLCanvasElement && src !== this.canvas) {
-      const [sx, sy, sw, sh, dx, dy, dw, dh] = a.length === 8 ? a : a.length === 4 ? [0, 0, src.width, src.height, ...a] : [0, 0, src.width, src.height, a[0], a[1], src.width, src.height];
-      const T = this.getTransform(), kx = dw / sw, ky = dh / sh;
-      for (const e of rec.log.filter((e) => e.canvas === src)) {
-        const [l, t, r, b] = e.box, inner = [dx + (l - sx) * kx, dy + (t - sy) * ky, dx + (r - sx) * kx, dy + (b - sy) * ky];
-        rec.log.push({ canvas: this.canvas, text: e.text, box: place(T, corners(inner)), size: e.size * Math.sqrt(Math.abs(kx * ky * (T.a * T.d - T.b * T.c))), alpha: e.alpha * this.globalAlpha });
-      }
-    }
-    return copy.apply(this, [src, ...a]);
-  };
-}
-
-// In Node: what's wrong with one frame's words. Cut by the frame's edge (a word wholly outside
-// is out of shot, not cut); overlapping another word by a fifth of the smaller one (the same word
-// drawn twice in place is one word); the film's own words (its text fields) under 28 px at 1440 px
-// on the short side, the phone limit. Small text in a product's UI is the product's, so not judged.
-// A problem is the words' fault when it involves a field's words and the default words had no
-// problem of that kind at that moment; the rest (crops and overlays by design) are notes.
-function textProblems({ w, h, texts }, words) {
-  const out = [], floor = 28 * Math.min(w, h) / 1440, round = (b) => b.map(Math.round).join(',');
-  const area = (b) => Math.max(0, b[2] - b[0]) * Math.max(0, b[3] - b[1]);
-  const meet = (a, b) => area([Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])]);
-  const ours = (s) => s.trim().length > 1 && words.some((v) => v.includes(s.trim()));
-  texts = texts.filter((x) => area([Math.max(x.box[0], 0), Math.max(x.box[1], 0), Math.min(x.box[2], w), Math.min(x.box[3], h)]) > 0); // in shot
-  for (const x of texts) {
-    if (x.box[0] < -1 || x.box[1] < -1 || x.box[2] > w + 1 || x.box[3] > h + 1) out.push({ kind: 'cut by the edge', text: x.text, ours: ours(x.text), detail: `"${x.text}" at [${round(x.box)}] in ${w}×${h}` });
-    if (x.size && x.size < floor - 0.01 && ours(x.text)) out.push({ kind: 'too small', text: x.text, ours: true, detail: `"${x.text}" at ${x.size.toFixed(1)} px (floor ${floor.toFixed(1)})` });
-    // textBaseline 'middle' centres the em box, not the letters: words sit high in their pill
-    if (x.middle) out.push({ kind: 'off-centre', text: x.text, ours: ours(x.text), detail: `"${x.text}" drawn with textBaseline 'middle', which sits it high; centre it with kit.centreText` });
-  }
-  for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) {
-    const a = texts[i], b = texts[j], both = meet(a.box, b.box), small = Math.min(area(a.box), area(b.box));
-    if (!small || both / small <= 0.2) continue;
-    if (a.text === b.text && both / (area(a.box) + area(b.box) - both) > 0.8) continue;
-    out.push({ kind: 'overlap', text: `${a.text}|${b.text}`, ours: ours(a.text) || ours(b.text), detail: `"${a.text}" and "${b.text}" (${Math.round(both / small * 100)}% of the smaller)` });
-  }
-  return out;
 }
 
 // Awkward words: a field at its longest, in wide letters (sentence case, keeping the original's

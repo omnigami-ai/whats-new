@@ -9,6 +9,7 @@
 //     "format": "png",              opt-in lossless capture; default remains WebP q92
 //     "ready": "selector",          wait for it after loading (optional)
 //     "init": "js",                 run after loading, e.g. to hold an animation still (optional)
+//     "inspect": "js",              JSON-serializable DOM evidence saved with each captured frame (optional)
 //     "setup": "setup.mjs",         a module beside the plan, for an app that needs a signed-in session or sample data
 //                                   from its own backend (optional): `export const args` (Chrome flags) and
 //                                   `export async function before(page)`, run before loading, e.g. answering the app's
@@ -122,6 +123,7 @@ async function shoot(name, scale, clip) {
   await writeFile(path.join(out, file), buffer);
   const pageRect = clip ? [clip.x, clip.y, clip.width, clip.height] : await page.evaluate(() => [0, 0, document.documentElement.scrollWidth, document.documentElement.scrollHeight]);
   manifest.captures[name] = { file, scale, rect: pageRect };
+  if (plan.inspect) manifest.captures[name].state = await page.evaluate(plan.inspect);
   console.log(file);
 }
 // one action, without the wait after it
