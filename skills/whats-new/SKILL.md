@@ -1,9 +1,8 @@
 ---
 name: whats-new
 description: >-
-  Make a repeatable 20–30 second release video from a product changelog and
-  real screens, in wide, square and tall. Use for a what's-new clip, app
-  update, release notes video or new version announcement.
+  Release video from your changelog and real screens, made again for every version, in wide, square and tall. Use for
+  a what's-new clip, an app update, a release notes or changelog video, or a new version announcement.
 ---
 
 # What's new

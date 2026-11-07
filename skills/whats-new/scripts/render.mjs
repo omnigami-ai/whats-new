@@ -254,6 +254,8 @@ try {
         } else await tile(await stills(label, times), Math.round(fw / 2), 4, path.join(dir, `${label}.png`));
       }
       if (changes.length) console.log(`wrote ${changes.length} UI-change strips (every frame${changes.every((c) => c.rect) ? ', full size' : ''}) to ${dir}`);
+      // a film that lists none has had no UI change reviewed frame by frame, however many strips it wrote (Tovra proof, 2026-11-06)
+      else console.log('no UI changes listed (template.uiChanges): no frame-by-frame UI strips were written; list every press, state change, loop and arrival');
     }
     if (opt('poster')) {
       const file = path.join(outDir, `${name}-poster.png`);
